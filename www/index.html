@@ -1,0 +1,681 @@
+<html>
+<!--
+-->
+<head>
+	<title>EeeTV</title>
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <!-- apple springboard icons -->
+		<link rel="apple-touch-icon" sizes="57x57" href="/ico/uni-57.png" />
+		<link rel="apple-touch-icon" sizes="72x72" href="/ico/uni-72.png" />
+		<link rel="apple-touch-icon" sizes="114x114" href="/ico/uni-114.png" />
+		<link rel="apple-touch-icon" sizes="144x144" href="/ico/uni-144.png" />
+        <!-- css -->
+        <link rel="stylesheet" type="text/css" href="/css/rc.css">
+    	<script src="/js/jquery-3.3.1.min.js"></script>
+        <!-- iPad 1,3 768 × 928 (1536 x 1856 pixels) In portrait on iOS 5 -->
+        <meta name="viewport" content="width=768, initial-scale=1.42, minimum-scale=1.42, maximum-scale=1.42">
+        <script>
+            // iPhone scalling
+            if (/iphone/i.test(navigator.userAgent.toLowerCase()))
+                $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
+        </script>
+        <meta name="version" content="2019.05.02">
+    <script>
+        $(document).ready(function(){
+
+            var messages = {
+                "socat-conection-refused":  "iPTV zariadenie je vypnuté !",
+                "other-error":              "iPTV zariadenie nefunguje !"
+            };
+
+            // show alert if data starts with DBG
+            //
+            var alert_dbg = function(data, status) {
+                if (data && data.indexOf("DBG") == 0) {
+                    alert(data);
+                }
+            };
+
+            var osd_epg = {
+
+                // epg program offset (previous/next movement)
+                offset: 0,
+
+                // progess bar size
+                barsize: 25,
+
+                // usd epg duration in ms
+                timems: 20000,
+
+                // previous/next offset manipulation
+                move_offset: function (str, step) {
+                    step = step || 1;
+                    switch (str) {
+                        case "+1":
+                            this.offset += step;
+                            break;
+                        case "-1":
+                            this.offset -= step;
+                            break;
+                        default:
+                            this.offset = 0;
+                    }
+                },
+
+                // shorten the string
+                str_max: function (str, maxlen, mark) {
+                    mark = mark || " ...";
+                    return str.length <= maxlen ? str : str.substr(0, maxlen - mark.length) + mark;
+                },
+
+                // yyyymmddhhmm -> hh:mm
+                hhmm: function (dt) {
+                    return dt.length == 12 ? dt.substr(-4,2) + ":" + dt.substr(-2,2) : ' ';
+                },
+
+                // test pattern x . y with font size fs
+                test: function (fs, x, y) {
+                    //  640 x  360: fs15 57 x 18 [ 855 270 ] 1.77
+                    //  640 x  360: fs20 43 x 14 [ 860 280 ] 1.77
+                    //  640 x  360: fs25 34 x 11 [ 850 275 ] 1.77
+                    //  785 x  576: fs25 25 x 11 [ 625 275 ] 1.36
+                    //  854 x  480: fs25 34 x 11                  / 24x11 fullscreen
+                    // 1024 x  576: fs25 34 x 11 [ 850 275 ] 1.77
+                    // 1047 x  576: fs25 34 x 11
+                    // 1920 x 1080: fs25 38 x 11 [ 625 275 ] 1.77 / 25x11 fullscreen
+                    var txt = this.ass_tag(['fs'+fs, 'an7']);
+                    x = x || 45;
+                    y = y || 12;
+                    for (var line=1; line <= y; line++) {
+                        if (line == 1) {
+                            for (var ix=1; ix <= x; ix++)
+                                txt += String.fromCharCode((ix % 10) + 47);
+                        } else {
+                            txt += "line " + line + " ";
+                        }
+                        txt += "\\n";
+                    }
+                    return txt;
+                },
+
+                ass_tag: function (tag) {
+                    var esc = "\\\\";
+                    if (Array.isArray(tag)) {
+                        var result = "";
+                        tag.forEach(function(item) { result += "{" + esc + item + "}" })
+                        return result;
+                    }
+                    return "{" + esc + tag + "}";
+                },
+
+                format: function (style, epg) {
+                    var nl = "\\n";
+                    var  s = "";
+
+                    switch (style) {
+
+                    case "title":
+                        s = this.ass_tag(['fs25', 'an8']) + this.str_max(epg.title, 35) + nl;
+                        break;
+
+                    case "time":
+                        s  = this.ass_tag('fs20') + this.hhmm(epg.start_dt);
+                        s += " [ " + this.ass_tag('fscy80') + epg.bar + this.ass_tag('fscy100') + " ] ";
+                        s += this.hhmm(epg.end_dt) + nl;
+                        break;
+
+                    case "stars":
+                        s = this.ass_tag(['fs20','i1']) + this.str_max(epg.stars, 2 * 43) + nl;
+                        break;
+
+                    case "year":
+                        s = this.ass_tag(['fs20', 'i0']) + epg.year;
+                        if (epg.country) s += " - " + epg.country;
+                        s += nl;
+                        break;
+
+                    case "desc":
+                        s = this.ass_tag('fs15') + this.str_max(epg.desc, 10 * 57) + nl;
+                        break;
+                    }
+                    return s;
+                    //return s.replace(/"/, '\"');
+                },
+
+                format_list: function (epglist) {
+                    var nl = "\\n";
+                    var  s = this.ass_tag(['fs20', 'an4']);
+
+                    for (var i = 0; i < epglist.length; i++) {
+                        var epg = epglist[i];
+                        s += this.hhmm(epg.start_dt) + " " + this.str_max(epg.title, 38) + nl;
+                    }
+                    return s;
+                },
+            };
+
+            function simulate_press_eject(button, eject, delayup) {
+
+                console.log('simulate_press_eject(buton='+button.attr('name')+', eject='+eject+', delayup='+delayup);
+
+                // eject currently pressed button
+                //
+                if (eject) $(".buttondown").removeClass("buttondown");
+
+                // simulate press
+                //
+                if (button) button.addClass("buttondown");
+
+                // delayed autorelease
+                //
+                if (delayup) setTimeout(function() { button.removeClass("buttondown");}.bind(button), delayup);
+            }
+
+            function press_button_with_active_channel() {
+                $.get( "/cgi-bin/tv.cgi", "get-title",
+                        function(data, status) {
+                            try {
+                                // {"data":"Wau,,0","error":"success"}
+                                var title = $.parseJSON(data).data.replace(/,,0$/, '');
+
+                                simulate_press_eject($("button[name='"+ title +"']"), true, 0);
+
+                            } catch(e) {
+                                if (data.indexOf('socat') > 1 && data.indexOf('Connection refused') > 1) {
+                                    // iPTV device is OFF
+                                    alert(messages["socat-conection-refused"]);
+                                }
+                                else if (data && data.indexOf("DBG") == 0) {
+                                    // debug message
+                                    alert(data);
+                                }
+                                else {
+                                    // other problem
+                                    alert(messages["other-error"]);
+                                }
+                            }
+                        },
+                        "text"
+                )
+            }
+
+            // select default channel
+            //
+            press_button_with_active_channel();
+
+            // on-click
+            //
+            $("button").click(function() {
+
+                // name
+                //
+                var name = $(this).prop("name");
+
+                // channel-buttons have radio class
+                //
+                if ($(this).hasClass("radio")) {
+
+                    simulate_press_eject($(this), true, 0);
+
+                    // channel switching
+                    // ?channel=name
+                    $.get(  "/cgi-bin/tv.cgi",
+                            {
+                                "channel": name
+                            },
+                            alert_dbg,
+                            "text"
+                    )
+
+                }
+                // single functionality button (not channel switching)
+                //
+                else if ($(this).hasClass("single")) {
+
+                    simulate_press_eject($(this), false, 2000);
+
+                    // survey has specific parameters
+                    //
+                    if ($(this).hasClass("survey")) {
+                        if (name == "survey-range") {
+                            $.get("/cgi-bin/tv.cgi",
+                                    {
+                                        "survey-range-playlist": $(this).data("playlist") ?
+                                                 $(this).data("playlist") : "-",
+                                        "start": $(this).data("start"),
+                                        "end":   $(this).data("end"),
+                                        "osd":   $(this).data("osd")
+                                    },
+                                    alert_dbg,
+                                    "text"
+                            )
+                        }
+                        else if (name == "survey-list") {
+                            $.get("/cgi-bin/tv.cgi",
+                                    {
+                                        "survey-list-playlist": $(this).data("playlist") ?
+                                                $(this).data("playlist") : "-",
+                                        "list": $(this).data("list"),
+                                        "osd":  $(this).data("osd")
+                                    },
+                                    alert_dbg,
+                                    "text"
+                            )
+                        }
+                    }
+                    // show-text has show-text parameter
+                    //
+                    else if (name == "show-text") {
+
+                        // text parameter
+                        // ?show-text=this+is+text
+                        var text = $("#text").val();
+                        $.get(  "/cgi-bin/tv.cgi",
+                                {
+                                    "show-text": text
+                                },
+                                alert_dbg,
+                                "text"
+                        )
+                    }
+                    // show active channel EPG
+                    //
+                    else if (name == "program") {
+
+                        // button pressed = active channel
+                        var title = $(".radio.buttondown").attr("name");
+
+                        // handle offset movements (get value as string)
+                        osd_epg.move_offset($(this).attr("data-offset"), 1);
+
+                        // just test pattern for osd font-size
+                        if ($(this).text() == "test") {
+                                // ?show-text=this+is+text
+                                $.get(  "/cgi-bin/tv.cgi",
+                                        {
+                                            "show-text-ass-cc": osd_epg.test(25)
+                                        },
+                                        alert_dbg,
+                                        "text"
+                                );
+                        } else {
+
+                            $.get( "/cgi-bin/tv.cgi",
+                                    {
+                                        "get-epg": 0,
+                                        "channel": title,
+                                        "offset":  osd_epg.offset,
+                                        "barsize": osd_epg.barsize
+                                    },
+                                    function (data, status) {
+
+                                        try {
+                                            var epg = $.parseJSON(data);
+                                            // default
+                                            var text = osd_epg.format("title", { "title": "program nedostupný" });
+
+                                            // valid epg
+                                            if (epg.tvid) {
+                                                text = osd_epg.format("title", epg)
+                                                     + osd_epg.format("time", epg)
+                                                     + osd_epg.format("stars", epg)
+                                                     + osd_epg.format("year", epg)
+                                                     + osd_epg.format("desc", epg);
+                                            }
+
+                                            // text parameter
+                                            // ?show-text=this+is+text
+                                            $.get(  "/cgi-bin/tv.cgi",
+                                                    {
+                                                        "show-text-ass-cc": text,
+                                                        "time": osd_epg.timems
+                                                    },
+                                                    alert_dbg,
+                                                    "text"
+                                            );
+
+                                        } catch(e) {
+                                            alert("get-epg title:"+title+", error:"+e+"\n data:"+data);
+                                        }
+                                    },
+                                    "text"
+                            )
+                        }
+                    }
+                    else if (name == "playlist") {
+
+                        // playlist command
+                        var command = $(this).data("command")
+
+                        $.get( "/cgi-bin/tv.cgi",
+                                {
+                                    "playlist":     command
+                                },
+                                alert_dbg,
+                                "text"
+                        );
+
+                        // as the channel has been changed update button pressed after short delay
+                        //
+                        setTimeout(function() { press_button_with_active_channel(); }, 1000);
+
+                    }
+                    else if (name == "program-list") {
+
+                        // button pressed = active channel
+                        var title = $(".radio.buttondown").attr("name");
+
+                        // limit (page size)
+                        var size = $(this).data("size")
+
+                        // handle offset movements (get value as string)
+                        osd_epg.move_offset($(this).attr("data-offset"), size);
+
+                        $.get( "/cgi-bin/tv.cgi",
+                                {
+                                    "get-epg-list": size,
+                                    "channel":      title,
+                                    "offset":       osd_epg.offset
+                                },
+                                function (data, status) {
+
+                                    try {
+                                        var epglist = $.parseJSON(data);
+                                        // default
+                                        var text = osd_epg.format("title", { "title": "program nedostupný" });
+
+                                        // valid epg
+                                        if (epglist[0].tvid) {
+                                            text = osd_epg.format_list(epglist);
+                                        }
+
+                                        // text parameter
+                                        // ?show-text=this+is+text
+                                        $.get(  "/cgi-bin/tv.cgi",
+                                                {
+                                                    "show-text-ass-cc": text,
+                                                    "time": osd_epg.timems
+                                                },
+                                                alert_dbg,
+                                                "text"
+                                        );
+
+                                    } catch(e) {
+                                        alert("get-epg title:"+title+", error:"+e+"\n data:"+data);
+                                    }
+                                },
+                                "text"
+                        )
+                    }
+                    // single command (no parameters) like clock, info, weather
+                    //
+                    else {
+
+                        // ?command
+                        $.get(  "/cgi-bin/tv.cgi",
+                                name,
+                                alert_dbg,
+                                "text"
+                        )
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+
+<h3>EeeTV WiFi TV Diaľkový Ovládač</h3>
+    <h4><span>sloveské kanály</span></h4>
+        <button class="button radio" name="Dajto"></button>
+        <button class="button radio" name="Doma"></button>
+        <button class="button radio" name="Markíza"></button>
+        <br>
+        <button class="button radio" name="Joj"></button>
+        <button class="button radio" name="Joj+"></button>
+        <button class="button radio" name="Joj Family"></button>
+        <button class="button radio" name="Joj Cinema"></button>
+        <br>
+        <button class="button radio" name="STV1"></button>
+        <button class="button radio" name="STV2"></button>
+        <button class="button radio" name="TA3"></button>
+        <button class="button radio" name="TV Hronka"></button>
+        <br>
+        <button class="button radio" name="Wau"></button>
+        <button class="button radio" name="Lux"></button>
+        <button class="button radio" name="Osem"></button>
+        <button class="button radio" name="Dr. Bukovsky"></button>
+        <br>
+        <button class="button radio" name="TV Raj"></button>
+        <button class="button radio" name="STV3"></button>
+        <button class="button radio" name="Info Vojna"></button>
+        <button class="button radio" name="Radio Info Vojna"></button>
+
+    <h4><span>kanál</span></h4>
+        <p align="center">
+        <button class="button textbutton single" name="playlist" data-command="playlist-prev">< -1</button>
+        <button class="button textbutton single" name="playlist" data-command="reload">TV</button>
+        <button class="button textbutton single" name="playlist" data-command="playlist-next">+1 ></button>
+        </p>
+
+    <h4><span>české kanály</span></h4>
+
+        <button class="button radio" name="ČT1"></button>
+        <button class="button radio" name="ČT2"></button>
+        <br>
+        <button class="button radio" name="AMC"></button>
+        <button class="button radio" name="FilmBox"></button>
+        <button class="button radio" name="Film+"></button>
+        <button class="button radio" name="CS Film"></button>
+        <br>
+        <button class="button radio" name="Spektrum"></button>
+        <button class="button radio" name="Via History"></button>
+        <button class="button radio" name="Discovery"></button>
+        <button class="button radio" name="Science"></button>
+        <br>
+        <button class="button radio" name="Prima"></button>
+        <button class="button radio" name="Prima Cool"></button>
+        <button class="button radio" name="Prima Zoom"></button>
+        <button class="button radio" name="Prima Max"></button>
+        <br>
+        <button class="button radio" name="Nova"></button>
+        <button class="button radio" name="Nova Action"></button>
+        <button class="button radio" name="Nova Gold"></button>
+        <button class="button radio" name="Nova Cinema"></button>
+        <br>
+        <button class="button radio" name="TV Barrandov"></button>
+        <button class="button radio" name="Barrandov+"></button>
+        <button class="button radio" name="Kino Barrandov"></button>
+        <br>
+        <button class="button radio" name="FilmBox+"></button>
+        <button class="button radio" name="FilmBox Family"></button>
+        <button class="button radio" name="E!"></button>
+        <button class="button radio" name="HBO 3"></button>
+        <br>
+        <button class="button radio" name="Cinemax"></button>
+        <button class="button radio" name="Cinemax 2"></button>
+        <button class="button radio" name="HBO"></button>
+        <button class="button radio" name="HBO 2"></button>
+        <br>
+        <button class="button radio" name="AXN"></button>
+        <button class="button radio" name="AXN White"></button>
+        <button class="button radio" name="AXN Black"></button>
+        <br>
+        <button class="button radio" name="Kino svet"></button>
+        <button class="button radio" name="TV Paprika"></button>
+        <button class="button radio" name="Fashion TV"></button>
+        <button class="button radio" name="Elektrik TV"></button>
+        <br>
+        <button class="button radio" name="Ceskoslovensko"></button>
+        <button class="button radio" name="Praha TV"></button>
+        <button class="button radio" name="TV Natura"></button>
+        <br>
+        <button class="button radio" name="Očko Gold"></button>
+        <button class="button radio" name="Retro"></button>
+        <button class="button radio" name="VH 1"></button>
+        <button class="button radio" name="Monte Carlo"></button>
+
+    <h4><span>TV program</span></h4>
+
+        <button class="button textbutton single" name="program-list" data-size="14">prehlad</button>
+        <button class="button textbutton single" name="program" data-offset="-1"><< pred</button>
+        <button class="button textbutton single" name="program">teraz</button>
+        <button class="button textbutton single" name="program" data-offset="+1">po >></button>
+
+    <h4><span>zahraničné kanály</span></h4>
+
+        <button class="button radio" name="NASA TV"></button>
+        <button class="button radio" name="PBS"></button>
+        <button class="button radio" name="SyFy"></button>
+        <button class="button radio" name="Hit Music"></button>
+    <br>
+        <button class="button radio" name="Pervyj 1"></button>
+        <button class="button radio" name="Rossia 1"></button>
+        <button class="button radio" name="Rossia 24"></button>
+        <button class="button radio" name="Ruptly"></button>
+    <br>
+        <button class="button radio" name="RT News"></button>
+        <button class="button radio" name="RT News USA"></button>
+        <button class="button radio" name="RT News UK"></button>
+        <button class="button radio" name="RT Doc"></button>
+	<br>
+        <button class="button radio" name="Da Vinci RU"></button>
+        <button class="button radio" name="Nauka RU"></button>
+        <button class="button radio" name="zdravie RU"></button>
+        <button class="button radio" name="Kaleidoskop RU"></button>
+    <br>
+        <button class="button radio" name="Fox News"></button>
+        <button class="button radio" name="Fox Business"></button>
+        <button class="button radio" name="CNN"></button>
+        <button class="button radio" name="CNBC"></button>
+    <br>
+        <button class="button radio" name="MSNBC"></button>
+        <button class="button radio" name="Sky News"></button>
+        <button class="button radio" name="Sky News UK"></button>
+        <button class="button radio" name="Sky News US"></button>
+    <br>
+        <button class="button radio" name="ABC"></button>
+        <button class="button radio" name="ABC News"></button>
+        <button class="button radio" name="CBC news"></button>
+        <button class="button radio" name="Toronto 360"></button>
+    <br>
+        <button class="button radio" name="InfoWars.com"></button>
+
+    <h4><span>test</span></h4>
+
+        <button class="button textbutton single" name="program">test</button>
+
+    <h4><span>rádio</span></h4>
+
+        <button class="button textbutton1em radio" name="radio 80">Radio 80's</button>
+        <button class="button textbutton1em radio" name="chfi soft rock">Soft Rock</button>
+        <button class="button textbutton1em radio" name="q107">Q-107</button>
+        <button class="button textbutton1em radio" name="hity 80">Hity 80</button>
+        <br>
+        <button class="button textbutton1em radio" name="frekvence 1">Frekvence 1</button>
+        <button class="button textbutton1em radio" name="frekvence1 legendy">Frekvence1 Legendy</button>
+        <button class="button textbutton1em radio" name="radio1 retro">Radio1 Retro</button>
+        <button class="button textbutton1em radio" name="radio disco">Radio Disco</button>
+
+    <h4><span>kamery</span></h4>
+
+        <button class="button textbutton1em radio" name="Biela Púť - Jasná">Biela Púť Jasná</button>
+        <button class="button textbutton1em radio" name="Brhliská">Brhliská</button>
+        <button class="button textbutton1em radio" name="Chopok Východ">Chopok Východ</button>
+        <button class="button textbutton1em radio" name="Chopok Západ">Chopok Západ</button>
+        <button class="button textbutton1em radio" name="Priehyba - Jasná">Priehyba Jasná</button>
+        <button class="button textbutton1em radio" name="Jasná - Lúčky">Jasná Lúčky</button>
+        <button class="button textbutton1em radio" name="Hrebienok">Hrebienok</button>
+        <button class="button textbutton1em radio" name="Hrebienok - dóm">Hrebienok dóm</button>
+        <button class="button textbutton1em radio" name="Twinlinger - Jasná">Twinlinger Jasná</button>
+        <button class="button textbutton1em radio" name="Konský Grúň - Jasná">Konský Grúň Jasná</button>
+        <button class="button textbutton1em radio" name="Luková - Jasná">Luková Jasná</button>
+        <button class="button textbutton1em radio" name="Priehyba - Jasná">Priehyba Jasná</button>
+        <button class="button textbutton1em radio" name="Záhradky - Jasná">Záhradky Jasná</button>
+        <button class="button textbutton1em radio" name="Chopok - Kosodrevina">Chopok Kosodrevina</button>
+        <button class="button textbutton1em radio" name="Chopok - Srdiečko">Chopok Srdiečko</button>
+        <button class="button textbutton1em radio" name="Srdiečko - Jasná">Srdiečko Jasná</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - mostík">Štrb.Pleso mostík</button>
+        <button class="button textbutton1em radio" name="Skalnaté Pleso 1">Skalnaté Pleso 1</button>
+        <button class="button textbutton1em radio" name="Skalnaté Pleso 2">Skalnaté Pleso 2</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - Solisko">Štrb.Pleso Solisko</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - dole">Štrb.Pleso dole</button>
+        <button class="button textbutton1em radio" name="Tat.Lomnica - Štart">Tat.Lomnica Štart</button>
+        <button class="button textbutton1em radio" name="Aquapark - Bešeňová">Aquapark Bešeňová</button>
+        <button class="button textbutton1em radio" name="niekde 39">niekde 39</button>
+        <button class="button textbutton1em radio" name="Chopok - free.zone">Chopok free.zone</button>
+        <button class="button textbutton1em radio" name="Záhradky - Jasná">Záhradky Jasná</button>
+        <button class="button textbutton1em radio" name="Lomnické sedlo">Lomnické sedlo</button>
+        <button class="button textbutton1em radio" name="Štrba Tatry">Štrba Tatry</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - areál">Štrb.Pleso areál</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - bež.areál">Štrb.Pleso bež.areál</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - panoráma">Štrb.Pleso panoráma</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - Móryho v.">Štrb.Pleso Móryho v.</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - VysokéTatry">Štrb.Pleso VysokéTatry</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - jazero">Štrb.Pleso jazero</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - námestie">Štrb.Pleso námestie</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - Nové ŠP">Štrb.Pleso Nové ŠP</button>
+        <button class="button textbutton1em radio" name="Štrb.Pleso - zjazdovky">Štrb.Pleso zjazdovky</button>
+        <button class="button textbutton1em radio" name="Malinô Brdo - 1209m">Malinô Brdo 1209m</button>
+        <button class="button textbutton1em radio" name="Malinô Brdo - Daria">Malinô Brdo Daria</button>
+        <button class="button textbutton1em radio" name="Malinô Brdo - Hrabovo">Malinô Brdo Hrabovo</button>
+        <button class="button textbutton1em radio" name="Malinô Brdo - Mini ZOO">Malinô Brdo Mini ZOO</button>
+        <button class="button textbutton1em radio" name="Malinô Brdo - vleky">Malinô Brdo vleky</button>
+        <button class="button textbutton1em radio" name="Donovaly - detský svet">Donovaly detský svet</button>
+        <button class="button textbutton1em radio" name="Donovaly - panoráma">Donovaly panoráma</button>
+        <button class="button textbutton1em radio" name="Donovaly - Funarena">Donovaly Funarena</button>
+        <button class="button textbutton1em radio" name="Donovaly - Funpark">Donovaly Funpark</button>
+        <button class="button textbutton1em radio" name="Donovaly - Habakuky">Donovaly Habakuky</button>
+        <button class="button textbutton1em radio" name="Donovaly - Nová Hoľa">Donovaly Nová Hoľa</button>
+        <button class="button textbutton1em radio" name="Donovaly - NvHl dojazd">Donovaly NvHl dojazd</button>
+        <button class="button textbutton1em radio" name="Donovaly - NvHl panor.">Donovaly NvHl panor.</button>
+        <button class="button textbutton1em radio" name="Donovaly - záhradište">Donovaly záhradište</button>
+        <button class="button textbutton1em radio" name="Donovaly">Donovaly</button>
+        <button class="button textbutton1em radio" name="Demänová">Demänová</button>
+        <button class="button textbutton1em radio" name="Krmítko LM">Krmítko LM</button>
+        <button class="button textbutton1em radio" name="Krmítko LM2">Krmítko LM2</button>
+        <button class="button textbutton1em radio" name="Krmítko LM3">Krmítko LM3</button>
+        <button class="button textbutton1em radio" name="Part. Ľupća">Part. Ľupća</button>
+        <button class="button textbutton1em radio" name="Pribilina">Pribilina</button>
+        <button class="button textbutton1em radio" name="Vavrišovo">Vavrišovo</button>
+        <button class="button textbutton1em radio" name="Kriváň - Permon">Kriváň Permon</button>
+        <button class="button textbutton1em radio" name="Podbanské vlek">Podbanské vlek</button>
+        <button class="button textbutton1em radio" name="Ski Gugel Mlynky">Ski Gugel Mlynky</button>
+        <button class="button textbutton1em radio" name="Vavrišovo II">Vavrišovo II</button>
+        <button class="button textbutton1em radio" name="Vyšná Boca">Vyšná Boca</button>
+        <button class="button textbutton1em radio" name="Lomnický Štít">Lomnický Štít</button>
+        <button class="button textbutton1em radio" name="Praha">Praha</button>
+        <button class="button textbutton1em radio" name="Praha Hradčany">Praha Hradčany</button>
+        <button class="button textbutton1em radio" name="NY TimesSquare">NY TimesSquare</button>
+        <button class="button textbutton1em radio" name="Algonquin Park">Algonquin Park</button>
+        <button class="button textbutton1em radio" name="Toronto CNT.West">Toronto CNT.West</button>
+        <button class="button textbutton1em radio" name="Toronto CNT.East">Toronto CNT.East</button>
+        <button class="button textbutton1em radio" name="Niagara Falls">Niagara Falls</button>
+
+    <h4><span>prehľad</span></h4>
+
+        <button class="button textbutton single survey"
+                data-start="Biela Púť - Jasná" data-end="Lomnický Štít" data-osd="Tatry prehľad"
+                name="survey-range">Tatry</button>
+
+        <button class="button textbutton single survey"
+                data-start="Malinô Brdo - 1209m" data-end="Donovaly" data-osd="Fatra/Donovaly prehľad"
+                name="survey-range">Fatra</button>
+
+        <button class="button textbutton single survey"
+                data-start="Biela Púť - Jasná" data-end="Niagara Falls" data-osd="Kamery prehľad"
+                name="survey-range">kamery</button>
+
+    <h4><span>iné funkcie</span></h4>
+
+        <button class="button textbutton single" name="email">email</button>
+        <button class="button textbutton single" name="weather" disabled>počasie</button>
+        <button class="button textbutton single" name="clock">hodiny</button>
+        <button class="button textbutton single" name="info">info</button>
+
+    <h4><span>zobraz správu</span></h4>
+
+        <input type="text" size="40" id="text">
+        <button class="button textbutton single" name="show-text">zobraz</button>
+</body>
+</html>
