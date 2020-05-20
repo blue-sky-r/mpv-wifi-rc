@@ -1,8 +1,12 @@
 <html>
 <!--
+version: 2020.05.17
+
+note: edit only www/all/index.html
+
 -->
 <head>
-	<title>EeeTV</title>
+	<title>iPTV</title>
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <!-- apple springboard icons -->
 		<link rel="apple-touch-icon" sizes="57x57" href="/ico/uni-57.png" />
@@ -426,7 +430,31 @@
 </head>
 <body>
 
-<h3>EeeTV WiFi TV Diaľkový Ovládač</h3>
+<h3>iPTV WiFi TV Diaľkový Ovládač</h3>
+
+    <h4><span>dvbt (cez antenu)</span></h4>
+        <button class="button radio" name="dvb STV1"></button>
+        <button class="button radio" name="dvb STV2"></button>
+        <button class="button radio" name="dvb STV3"></button>
+        <br>
+        <button class="button radio" name="dvb Joj"></button>
+        <button class="button radio" name="dvb Joj+"></button>
+        <button class="button radio" name="dvb Wau"></button>
+        <br>
+        <button class="button radio" name="dvb Promo"></button>
+        <button class="button radio" name="dvb SSTV"></button>
+        <button class="button radio" name="dvb Hronka"></button>
+        <button class="button radio" name="dvb TA3"></button>
+        <br>
+        <button class="button radio" name="dvb Osem"></button>
+        <button class="button radio" name="dvb Lux"></button>
+        <button class="button radio" name="dvb Noe"></button>
+        <button class="button radio" name="dvb Senzi"></button>
+        <br>
+        <button class="button radio" name="dvb STV1 HD"></button>
+        <button class="button radio" name="dvb STV2 HD"></button>
+        <button class="button radio" name="dvb STV3 HD"></button>
+
     <h4><span>sloveské kanály</span></h4>
         <button class="button radio" name="Dajto"></button>
         <button class="button radio" name="Doma"></button>
@@ -439,26 +467,47 @@
         <br>
         <button class="button radio" name="STV1"></button>
         <button class="button radio" name="STV2"></button>
-        <button class="button radio" name="TA3"></button>
-        <button class="button radio" name="TV Hronka"></button>
-        <br>
-        <button class="button radio" name="Wau"></button>
-        <button class="button radio" name="Lux"></button>
-        <button class="button radio" name="Osem"></button>
-        <button class="button radio" name="Dr. Bukovsky"></button>
+        <button class="button radio" name="STV3"></button>
+        <button class="button radio" name="NR.SR"></button>
         <br>
         <button class="button radio" name="TV Raj"></button>
-        <button class="button radio" name="STV3"></button>
+        <button class="button radio" name="SSTV"></button>
+        <button class="button radio" name="TV Hronka"></button>
+        <button class="button radio" name="TA3"></button>
+        <br>
+        <button class="button radio" name="Lux"></button>
+        <button class="button radio" name="Wau"></button>
+        <button class="button radio" name="Osem"></button>
+
+    <h4><span>akcia</span></h4>
+        <p align="center">
+            <button class="button textbutton single" name="playlist" data-command="shutdown">vypni</button>
+        </p>
+        <button class="button textbutton single" name="playlist" data-command="esc">ESC</button>
+        <button class="button textbutton single" name="playlist" data-command="playlist-prev">< -1</button>
+        <button class="button textbutton single" name="playlist" data-command="reload">TV</button>
+        <button class="button textbutton single" name="playlist" data-command="playlist-next">+1 ></button>
+
+    <h4><span>TV program</span></h4>
+        <button class="button textbutton single" name="program-list" data-size="14">prehlad</button>
+        <button class="button textbutton single" name="program" data-offset="-1"><< pred</button>
+        <button class="button textbutton single" name="program">teraz</button>
+        <button class="button textbutton single" name="program" data-offset="+1">po >></button>
+
+    <h4><span>youtube kanály</span></h4>
         <button class="button radio" name="Info Vojna"></button>
         <button class="button radio" name="Radio Info Vojna"></button>
+        <button class="button radio" name="Dr. Bukovsky"></button>
+        <br>
+        <br>
+        <fieldset>
+            <legend></legend>
+        </fieldset>
 
-    <h4><span>kanál</span></h4>
-        <p align="center">
-            <button class="button textbutton single" name="playlist" data-command="esc">ESC</button>
-            <button class="button textbutton single" name="playlist" data-command="playlist-prev">< -1</button>
-            <button class="button textbutton single" name="playlist" data-command="reload">TV</button>
-            <button class="button textbutton single" name="playlist" data-command="playlist-next">+1 ></button>
-        </p>
+    <h4><span>youtube</span></h4>
+            <span>v=</span>
+            <input type="text" size="40" id="ytdl" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'<x>')">
+            <button class="button textbutton single" name="yt-play">prehraj</button>
 
     <h4><span>české kanály</span></h4>
 
@@ -516,13 +565,6 @@
         <button class="button radio" name="Retro"></button>
         <button class="button radio" name="VH 1"></button>
         <button class="button radio" name="Monte Carlo"></button>
-
-    <h4><span>TV program</span></h4>
-
-        <button class="button textbutton single" name="program-list" data-size="14">prehlad</button>
-        <button class="button textbutton single" name="program" data-offset="-1"><< pred</button>
-        <button class="button textbutton single" name="program">teraz</button>
-        <button class="button textbutton single" name="program" data-offset="+1">po >></button>
 
     <h4><span>zahraničné kanály</span></h4>
 
