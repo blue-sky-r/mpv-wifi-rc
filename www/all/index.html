@@ -7,6 +7,7 @@ note: edit only www/all/index.html
 -->
 <head>
 	<title>iPTV</title>
+        <!-- favicon -->
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <!-- apple springboard icons -->
 		<link rel="apple-touch-icon" sizes="57x57" href="/ico/uni-57.png" />
@@ -15,15 +16,17 @@ note: edit only www/all/index.html
 		<link rel="apple-touch-icon" sizes="144x144" href="/ico/uni-144.png" />
         <!-- css -->
         <link rel="stylesheet" type="text/css" href="/css/rc.css">
+        <!-- jquery -->
     	<script src="/js/jquery-3.3.1.min.js"></script>
         <!-- iPad 1,3 768 × 928 (1536 x 1856 pixels) In portrait on iOS 5 -->
         <meta name="viewport" content="width=768, initial-scale=1.42, minimum-scale=1.42, maximum-scale=1.42">
         <script>
-            // iPhone scalling
+            // iPhone scaling
             if (/iphone/i.test(navigator.userAgent.toLowerCase()))
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
-        <meta name="version" content="2019.11.16">
+        <!-- version -->
+        <meta name="version" content="2020.05.20">
     <script>
         $(document).ready(function(){
 
@@ -48,7 +51,7 @@ note: edit only www/all/index.html
                 // progess bar size
                 barsize: 25,
 
-                // usd epg duration in ms
+                // osd epg duration in ms
                 timems: 20000,
 
                 // previous/next offset manipulation
@@ -215,21 +218,44 @@ note: edit only www/all/index.html
                 //
                 var name = $(this).prop("name");
 
-                // channel-buttons have radio class
+                // channel-buttons, yt-play have radio class
                 //
                 if ($(this).hasClass("radio")) {
 
-                    simulate_press_eject($(this), true, 0);
+                    if (name == "yt-play") {
 
-                    // channel switching
-                    // ?channel=name
-                    $.get(  "/cgi-bin/tv.cgi",
-                            {
-                                "channel": name
-                            },
-                            alert_dbg,
-                            "text"
-                    )
+                        simulate_press_eject($(this), false, 2000);
+
+                        // youtube watch v=id
+                        var vid = $("#yt-watch").val();
+
+                        // remove everything, keep just id
+                        // https://www.youtube.com/watch?v=identificator
+                        vid = vid.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/, '');
+
+                        $.get( "/cgi-bin/tv.cgi",
+                                {
+                                    "yt-watch":     vid
+                                },
+                                alert_dbg,
+                                "text"
+                        );
+
+                    }
+                    else {
+
+                        simulate_press_eject($(this), true, 0);
+
+                        // channel switching
+                        // ?channel=name
+                        $.get("/cgi-bin/tv.cgi",
+                                {
+                                    "channel": name
+                                },
+                                alert_dbg,
+                                "text"
+                        )
+                    }
 
                 }
                 // single functionality button (not channel switching)
@@ -267,6 +293,26 @@ note: edit only www/all/index.html
                             )
                         }
                     }
+
+                    // youtube channel - retrieve and show video list
+                    //
+                    if ($(this).hasClass("ytchannel")) {
+
+                        // youtube channel id
+                        //
+                        var channel = $(this).attr("data-channel");
+
+                        $.get("/cgi-bin/tv.cgi",
+                                {
+                                    "yt-list":  channel,
+                                    "idxfrom":  1,
+                                    "idxto":    15
+                                },
+                                alert_dbg,
+                                "text"
+                        )
+                    }
+
                     // show-text has show-text parameter
                     //
                     else if (name == "show-text") {
@@ -495,19 +541,46 @@ note: edit only www/all/index.html
         <button class="button textbutton single" name="program" data-offset="+1">po >></button>
 
     <h4><span>youtube kanály</span></h4>
-        <button class="button radio" name="Info Vojna"></button>
-        <button class="button radio" name="Radio Info Vojna"></button>
-        <button class="button radio" name="Dr. Bukovsky"></button>
+        <button class="button single ytchannel" name="Info Vojna"></button>
+        <button class="button single ytchannel" name="Radio Info Vojna"></button>
+        <button class="button single ytchannel" data-channel="UCaYEYc7sy0TKAmfIUEiahxA" name="Dr. Bukovsky"></button>
         <br>
-        <br>
-        <fieldset>
-            <legend></legend>
-        </fieldset>
+        <span>
+            <button class="button textbutton single" name="program" data-offset="-1">< -10</button>
+            <button class="button textbutton single" name="program" data-offset="-1"><  -1</button>
+            <button class="button textbutton single" name="program" data-offset="+1">+1 ></button>
+            <button class="button textbutton single" name="program" data-offset="+1">+10 ></button>
+            <br>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="1" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="2" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="3" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="4" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="5" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="6" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="7" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="8" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="9" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="10" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="11" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="12" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="13" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="14" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" data-idx="15" data-wid="">Štrbske Pleso areál dlhy text</button>
 
+            <button class="button textbutton single" name="program" data-offset="-1">< -10</button>
+            <button class="button textbutton single" name="program" data-offset="-1"><  -1</button>
+            <button class="button textbutton single" name="program" data-offset="+1">+1 ></button>
+            <button class="button textbutton single" name="program" data-offset="+1">+10 ></button>
+        </span>
     <h4><span>youtube</span></h4>
             <span>v=</span>
-            <input type="text" size="40" id="ytdl" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'<x>')">
-            <button class="button textbutton single" name="yt-play">prehraj</button>
+            <input type="text" size="40" id="yt-watch" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'')">
+            <button class="button textbutton1em radio" name="yt-play">prehraj</button>
+            <br>
+            <button class="button textbutton1em radio" name="yt-play"><<</button>
+            <button class="button textbutton1em radio" name="yt-play">||</button>
+            <button class="button textbutton1em radio" name="yt-play">|></button>
+            <button class="button textbutton1em radio" name="yt-play">>></button>
 
     <h4><span>české kanály</span></h4>
 
