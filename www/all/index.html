@@ -161,9 +161,90 @@ note: edit only www/all/index.html
                 },
             };
 
+            // youtube
+            //
+            var youtube = {
+
+                // playlist size (entries)
+                list_size: 10,
+
+                // playlist page
+                list_page: 1,
+
+                // title max length (for buttons)
+                title_max: 55,
+
+                // pager info text
+                pager_txt_format: "[ stránka: %d ]",
+
+                // channel id
+                channel: null,
+
+                pager_init: function (channel) {
+                    // save channel-id
+                    this.channel = channel;
+                    // the first page
+                    this.list_page = 1;
+                },
+
+                pager_update: function () {
+                    // display page nr
+                    $(".textpage").text(this.pager_text());
+                    // disable back button at the first page
+                    $("button[name='yt-list-back']").prop("disabled", this.list_page > 1);
+                    // disable forward button if last playlist button is hidden
+                    $("button[name='yt-list-forward']").prop("disabled", $("#idx-"+this.list_size).hidden);
+                },
+
+                pager_text: function () {
+                    return this.pager_txt_format.replace('%d', this.list_page);
+                },
+
+                playlist_button_idx: function (idx, watchid, title) {
+
+                    var button = $("#idx-"+idx);
+
+                    if (watchid && title) {
+                        // video-id
+                        button.attr("wid", watchid);
+                        // title
+                        button.text(osd_epg.str_max(title, this.title_max));
+                        // hide
+                        button.show();
+                    } else {
+                        // hide
+                        button.hide();
+                        // video-id
+                        button.attr("wid", "");
+                        // title
+                        button.text("");
+                    }
+                },
+
+                buttons_from_json: function (json) {
+
+                        var idx = 1;
+
+                        // update buttons from playlist id / title
+                        for (item of json) {
+                            this.playlist_button_idx(idx, item.id, item.title);
+                            idx++;
+                        };
+
+                        // hide unfilled buttons
+                        for (; idx <= youtube.list_size; idx++) {
+                            this.playlist_button_idx(idx, "", "");
+                        };
+
+                        // update pager status and buttons
+                        this.pager_update();
+                }
+
+            };
+
             function simulate_press_eject(button, eject, delayup) {
 
-                console.log('simulate_press_eject(buton='+button.attr('name')+', eject='+eject+', delayup='+delayup);
+                //console.log('simulate_press_eject(buton='+button.attr('name')+', eject='+eject+', delayup='+delayup);
 
                 // eject currently pressed button
                 //
@@ -302,13 +383,27 @@ note: edit only www/all/index.html
                         //
                         var channel = $(this).attr("data-channel");
 
+                        // pager init
+                        youtube.pager_init(channel);
+
                         $.get("/cgi-bin/tv.cgi",
                                 {
-                                    "yt-list":  channel,
-                                    "idxfrom":  1,
-                                    "idxto":    15
+                                    "yt-list":  0,
+                                    "channel":  channel,
+                                    "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
+                                    "idxto":    youtube.list_page * youtube.list_size
                                 },
-                                alert_dbg,
+                                function (data, status) {
+
+                                    try {
+                                        var json = $.parseJSON(data);
+
+                                        youtube.buttons_from_json(json);
+
+                                    } catch(e) {
+                                        alert("get youtube playlist:\n channel: "+channel+"\n error: "+e+"\n data: "+data);
+                                    }
+                                },
                                 "text"
                         )
                     }
@@ -541,36 +636,35 @@ note: edit only www/all/index.html
         <button class="button textbutton single" name="program" data-offset="+1">po >></button>
 
     <h4><span>youtube kanály</span></h4>
-        <button class="button single ytchannel" name="Info Vojna"></button>
-        <button class="button single ytchannel" name="Radio Info Vojna"></button>
+        <button class="button single ytchannel" data-channel="UC81PBuvIimtXQ8pDH7CcQkg" name="Info Vojna"></button>
+        <button class="button single ytchannel" data-channel="UCEB0x0zrM5P9GC0Do7SGTGQ" name="Pjakin"></button>
+        <button class="button single ytchannel" data-channel="UCy8woDNA0o6AIDu4ETrJQVg" name="Vesmir"></button>
         <button class="button single ytchannel" data-channel="UCaYEYc7sy0TKAmfIUEiahxA" name="Dr. Bukovsky"></button>
         <br>
-        <span>
-            <button class="button textbutton single" name="program" data-offset="-1">< -10</button>
-            <button class="button textbutton single" name="program" data-offset="-1"><  -1</button>
-            <button class="button textbutton single" name="program" data-offset="+1">+1 ></button>
-            <button class="button textbutton single" name="program" data-offset="+1">+10 ></button>
+        <span id="yt-playlist">
+            <button class="button textbutton single" name="yt-list-back">< -</button>
+            <span class="textpage">-</span>
+            <button class="button textbutton single" name="yt-list-forward">+ ></button>
             <br>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="1" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="2" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="3" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="4" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="5" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="6" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="7" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="8" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="9" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="10" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="11" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="12" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="13" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="14" data-wid="">Štrbske Pleso areál dlhy text</button>
-            <button class="button textbutton100 radio" name="yt-play" data-idx="15" data-wid="">Štrbske Pleso areál dlhy text</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-1" data-wid="">1</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-2" data-wid="">2</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-3" data-wid="">3</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-4" data-wid="">4</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-5" data-wid="">5</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-6" data-wid="">6</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-7" data-wid="">7</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-8" data-wid="">8</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-9" data-wid="">9</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-10" data-wid="">10</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-11" data-wid="">11</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-12" data-wid="">12</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-13" data-wid="">13</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-14" data-wid="">14</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-15" data-wid="">15</button>
 
-            <button class="button textbutton single" name="program" data-offset="-1">< -10</button>
-            <button class="button textbutton single" name="program" data-offset="-1"><  -1</button>
-            <button class="button textbutton single" name="program" data-offset="+1">+1 ></button>
-            <button class="button textbutton single" name="program" data-offset="+1">+10 ></button>
+            <button class="button textbutton single" name="yt-list-back">< -</button>
+            <span class="textpage">-</span>
+            <button class="button textbutton single" name="yt-list-forward">+ ></button>
         </span>
     <h4><span>youtube</span></h4>
             <span>v=</span>
