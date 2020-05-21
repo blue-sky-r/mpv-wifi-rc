@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2020.05.17
+version: 2020.05.21
 
 note: edit only www/all/index.html
 
@@ -26,10 +26,13 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.05.20">
+        <meta name="version" content="2020.05.21">
+
     <script>
         $(document).ready(function(){
 
+            // error messages shown as alert on RC browser/client
+            //
             var messages = {
                 "socat-conection-refused":  "iPTV zariadenie je vypnuté !",
                 "other-error":              "iPTV zariadenie nefunguje !"
@@ -165,8 +168,8 @@ note: edit only www/all/index.html
             //
             var youtube = {
 
-                // playlist size (entries)
-                list_size: 10,
+                // playlist size (entries, should be = #buttons)
+                list_size: 15,
 
                 // playlist page
                 list_page: 1,
@@ -191,7 +194,7 @@ note: edit only www/all/index.html
                     // display page nr
                     $(".textpage").text(this.pager_text());
                     // disable back button at the first page
-                    $("button[name='yt-list-back']").prop("disabled", this.list_page > 1);
+                    $("button[name='yt-list-back']").prop("disabled", this.list_page == 1);
                     // disable forward button if last playlist button is hidden
                     $("button[name='yt-list-forward']").prop("disabled", $("#idx-"+this.list_size).hidden);
                 },
@@ -238,9 +241,18 @@ note: edit only www/all/index.html
 
                         // update pager status and buttons
                         this.pager_update();
-                }
+                },
 
+                playlist_hide: function () {
+                    $("#yt-playlist").hide();
+                },
+
+                playlist_show: function () {
+                    $("#yt-playlist").show();
+                }
             };
+
+            youtube.playlist_hide();
 
             function simulate_press_eject(button, eject, delayup) {
 
@@ -325,6 +337,10 @@ note: edit only www/all/index.html
                     }
                     else {
 
+                        // hide youtube playlist when watching TV channels
+                        //
+                        youtube.playlist_hide();
+
                         simulate_press_eject($(this), true, 0);
 
                         // channel switching
@@ -343,7 +359,7 @@ note: edit only www/all/index.html
                 //
                 else if ($(this).hasClass("single")) {
 
-                    simulate_press_eject($(this), false, 2000);
+                    simulate_press_eject($(this), false, 3000);
 
                     // survey has specific parameters
                     //
@@ -388,8 +404,44 @@ note: edit only www/all/index.html
 
                         $.get("/cgi-bin/tv.cgi",
                                 {
-                                    "yt-list":  0,
+                                    "yt-list":  0, // placeholder
                                     "channel":  channel,
+                                    "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
+                                    "idxto":    youtube.list_page * youtube.list_size
+                                },
+                                function (data, status) {
+
+                                    try {
+                                        var json = $.parseJSON(data);
+
+                                        youtube.buttons_from_json(json);
+
+                                        youtube.playlist_show();
+
+                                    } catch(e) {
+                                        alert("get youtube playlist:\n channel: "+channel+"\n error: "+e+"\n data: "+data);
+                                    }
+                                },
+                                "text"
+                        )
+                    }
+
+                    // youtube list FORWARD / BACK
+                    //
+                    else if (name == "yt-list-back" || name == "yt-list-forward") {
+
+                        // next page
+                        //
+                        if (name == "yt-list-forward") youtube.list_page++;
+
+                        // previous page
+                        //
+                        if (name == "yt-list-back" && youtube.list_page > 1) youtube.list_page--;
+
+                        $.get("/cgi-bin/tv.cgi",
+                                {
+                                    "yt-list":  0, // placeholder
+                                    "channel":  youtube.channel,
                                     "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
                                     "idxto":    youtube.list_page * youtube.list_size
                                 },
