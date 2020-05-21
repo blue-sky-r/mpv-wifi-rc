@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2019.11.16"
+VER="2020.05.21"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -63,8 +63,10 @@ for keyval in ${QUERY_STRING//&/ }
 case $CMD in
 
     # channel=cnn
-    channel)	# refresh auth tokens only for specific channels
-                if [[ $channel =~ STV1|STV2|STV3|STV4|DAJTO|DOMA|MARKÍZA ]]
+    channel)
+                # refresh auth tokens only for specific channels
+                #if [[ $channel =~ STV1|STV2|STV3|STV4|DAJTO|DOMA|MARKÍZA ]]
+                if [[ $channel =~ DAJTO|DOMA|MARKÍZA ]]
                 then
                     refresh_tokens
                     # loadlist <playlist> [replace|append] - not required ?
@@ -125,6 +127,9 @@ case $CMD in
                 echo "$json"
                 ;;
 
+    # '{ "command": ["set", "pause", "yes"] }'
+    # '{ "command": ["seek", "-10"] }'
+
     # get program
     get-epg)    json=$( ./epg.py -title "${channel}" -offset ${offset} -bar ${barsize} -epg )
                 # output
@@ -165,19 +170,33 @@ case $CMD in
                     ;;
 
                 esc)
-                    # save current position
+                    # save current channel
                     property='playlist-pos-1'
                     # {"data":1,"request_id":0,"error":"success"}
                     pos1=$( echo '{ "command": ["get_property", "'${property}'"] }' | socat - /tmp/mpvsocket | awk -F:\|, '{print $2}')
                     # no response as mpv will quit
                     echo "keypress ESC" | socat - /tmp/mpvsocket
                     # wait for mpv restart
-                    sleep 2
-                    # restore position
+                    sleep 2.8
+                    # restore saved channel
                     echo '{ "command": ["set_property", "'${property}'", '${pos1}'] }' | socat - /tmp/mpvsocket
                     ;;
 
                 esac
+                ;;
+
+    # youtube list channel videos
+    yt-list)
+                json=$( youtube-dl -j --restrict-filenames --socket-timeout 5 \
+                --playlist-start $idxfrom --playlist-end $idxto --flat-playlist \
+                http://www.youtube.com/channel/${channel}/videos | tr "\n" "," | sed -e 's/,$//' )
+                # output json
+                echo "[ $json ]"
+                ;;
+
+    yt-watch)
+                url="ytdl://www.youtube.com/watch?v=$yt_watch"
+                r=$( echo '{ "command": ["loadfile", "'${url}'", "replace"] }' | socat - /tmp/mpvsocket )
                 ;;
 
     *)		    echo "unrecognized command:$CMD - query:$QUERY_STRING"
