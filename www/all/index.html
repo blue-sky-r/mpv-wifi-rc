@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2020.05.21
+version: 2020.05.22
 
 note: edit only www/all/index.html
 
@@ -26,7 +26,7 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.05.21">
+        <meta name="version" content="2020.05.22">
 
     <script>
         $(document).ready(function(){
@@ -391,9 +391,9 @@ note: edit only www/all/index.html
                         }
                     }
 
-                    // youtube channel - retrieve and show video list
+                    // youtube channel - retrieve and show playlist
                     //
-                    if ($(this).hasClass("ytchannel")) {
+                    else if ($(this).hasClass("ytchannel")) {
 
                         // youtube channel id
                         //
@@ -426,7 +426,7 @@ note: edit only www/all/index.html
                         )
                     }
 
-                    // youtube list FORWARD / BACK
+                    // youtube channel playlist move FORWARD / BACK
                     //
                     else if (name == "yt-list-back" || name == "yt-list-forward") {
 
@@ -458,6 +458,43 @@ note: edit only www/all/index.html
                                 },
                                 "text"
                         )
+                    }
+
+                    // raw command for player (pause, play, seek, ...)
+                    //
+                    else if ($(this).hasClass("cmd")) {
+
+                        var cmd = $(this).attr("data-cmd");
+
+                        // exec cmd
+                        $.get(  "/cgi-bin/tv.cgi",
+                                {
+                                    "cmd": cmd
+                                },
+                                alert_dbg,
+                                "text"
+                        )
+
+                        var cmd_to_osd_info = {
+                            "play":     "spustene",
+                            "pause":    "pozastavené",
+                            "ff":       "späť o 1 min",
+                            "rew":      "skok o 1 min"
+                        };
+
+                        var text = cmd_to_osd_info[cmd];
+
+                        // display osd info
+                        if ($text) {
+                            $.get("/cgi-bin/tv.cgi",
+                                    {
+                                        "show-text": text
+                                    },
+                                    alert_dbg,
+                                    "text"
+                            )
+                        }
+
                     }
 
                     // show-text has show-text parameter
@@ -690,6 +727,10 @@ note: edit only www/all/index.html
     <h4><span>youtube kanály</span></h4>
         <button class="button single ytchannel" data-channel="UC81PBuvIimtXQ8pDH7CcQkg" name="Info Vojna"></button>
         <button class="button single ytchannel" data-channel="UCEB0x0zrM5P9GC0Do7SGTGQ" name="Pjakin"></button>
+        <!--
+        <br>
+        <button class="button single ytchannel" data-channel="UCbmT0HqNDwOdJMTbRwZMmzA" name="GoschaTV"></button>
+        -->
         <button class="button single ytchannel" data-channel="UCy8woDNA0o6AIDu4ETrJQVg" name="Vesmir"></button>
         <button class="button single ytchannel" data-channel="UCaYEYc7sy0TKAmfIUEiahxA" name="Dr. Bukovsky"></button>
         <br>
@@ -719,14 +760,14 @@ note: edit only www/all/index.html
             <button class="button textbutton single" name="yt-list-forward">+ ></button>
         </span>
     <h4><span>youtube</span></h4>
-            <span>v=</span>
-            <input type="text" size="40" id="yt-watch" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'')">
+            <span>video = </span>
+            <input type="text" size="37" id="yt-watch" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'')">
             <button class="button textbutton1em radio" name="yt-play">prehraj</button>
             <br>
-            <button class="button textbutton1em radio" name="yt-play"><<</button>
-            <button class="button textbutton1em radio" name="yt-play">||</button>
-            <button class="button textbutton1em radio" name="yt-play">|></button>
-            <button class="button textbutton1em radio" name="yt-play">>></button>
+            <button class="button textbutton1em single cmd" name="rew"   data-cmd="seek -60"></button>
+            <button class="button textbutton1em single cmd" name="pause" data-cmd="set pause yes"></button>
+            <button class="button textbutton1em single cmd" name="play"  data-cmd="set pause no"></button>
+            <button class="button textbutton1em single cmd" name="ff"    data-cmd="seek +60"></button>
 
     <h4><span>české kanály</span></h4>
 
