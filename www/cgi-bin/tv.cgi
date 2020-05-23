@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.05.21"
+VER="2020.05.22"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -11,6 +11,10 @@ DBG=
 echo "Content-Type: text/plain"; echo
 
 [ $DBG ] && (echo "DBG: QUERY_STRING:${QUERY_STRING}"; echo)
+
+# shutdown (without sudo) for xubuntu
+#
+shutdown="xfce4-session-logout --halt"
 
 # json
 #
@@ -25,12 +29,12 @@ function json
 function refresh_tokens
 {
     local force=$1
-    local plist="tv.m3u8"
-    local plenv=${plist/.m3u8/-env.m3u8}
+    local srcplist="tv.m3u8.raw"
+    local dstplist="tv-env.m3u8"
     local bin="bin"
-    local dir="$bin/.."
+    local m3u8="$bin/../m3u8"
 
-    $bin/envsubst-playlist.sh "$dir/$plist" "$dir/$plenv" "$force"
+    $bin/envsubst-playlist.sh "$m3u8/$srcplist" "$m3u8/$dstplist" "$force"
 }
 
 # split by &
@@ -127,18 +131,28 @@ case $CMD in
                 echo "$json"
                 ;;
 
+    # direct command
     # '{ "command": ["set", "pause", "yes"] }'
     # '{ "command": ["seek", "-10"] }'
+    cmd)        r=$( echo '{ "command": ["'${cmd// /\",\"}'"] }' | socat - /tmp/mpvsocket )
+                ;;
 
     # get program
-    get-epg)    json=$( ./epg.py -title "${channel}" -offset ${offset} -bar ${barsize} -epg )
+    get-epg)
+                # remove leading dvbt_, remove trailing _HD
+                ch=${channel#dvbt }; ch=${ch% HD}
+                # get epg
+                json=$( ./epg.py -title "${ch}" -offset ${offset} -bar ${barsize} -epg )
                 # output
                 echo "$json"
                 ;;
 
     # get program list
     get-epg-list)
-                json=$( ./epg.py -title "${channel}" -offset ${offset} -epg-list ${get_epg_list} )
+                # remove leading dvbt_, remove trailing _HD
+                ch=${channel#dvbt }; ch=${ch% HD}
+                # get epg
+                json=$( ./epg.py -title "${ch}" -offset ${offset} -epg-list ${get_epg_list} )
                 # output
                 echo "$json"
                 ;;
@@ -180,6 +194,10 @@ case $CMD in
                     sleep 2.8
                     # restore saved channel
                     echo '{ "command": ["set_property", "'${property}'", '${pos1}'] }' | socat - /tmp/mpvsocket
+                    ;;
+
+                shutdown)
+                    r=$( $shutdown )
                     ;;
 
                 esac
