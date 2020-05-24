@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2020.05.22
+version: 2020.05.24
 
 note: edit only www/all/index.html
 
@@ -26,7 +26,7 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.05.22">
+        <meta name="version" content="2020.05.24">
 
     <script>
         $(document).ready(function(){
@@ -35,7 +35,13 @@ note: edit only www/all/index.html
             //
             var messages = {
                 "socat-conection-refused":  "iPTV zariadenie je vypnuté !",
-                "other-error":              "iPTV zariadenie nefunguje !"
+                "other-error":              "iPTV zariadenie nefunguje !",
+                "wid-empty":                "Chýba youtube video id !",
+                "yt-getting-playlist":      "spracovanie zoznamu",
+                "play":                     ">",
+                "pause":                    "STOP",
+                "rew":                      "<< -1 min",
+                "ff":                       "+1 min >>"
             };
 
             // show alert if data starts with DBG
@@ -164,6 +170,17 @@ note: edit only www/all/index.html
                 },
             };
 
+            var osd_show_text = function (text) {
+                if (text)
+                    $.get(  "/cgi-bin/tv.cgi",
+                            {
+                                "show-text": text
+                            },
+                            alert_dbg,
+                            "text"
+                    )
+            };
+
             // youtube
             //
             var youtube = {
@@ -209,7 +226,7 @@ note: edit only www/all/index.html
 
                     if (watchid && title) {
                         // video-id
-                        button.attr("wid", watchid);
+                        button.attr("data-wid", watchid);
                         // title
                         button.text(osd_epg.str_max(title, this.title_max));
                         // hide
@@ -218,7 +235,7 @@ note: edit only www/all/index.html
                         // hide
                         button.hide();
                         // video-id
-                        button.attr("wid", "");
+                        button.attr("data-wid", "");
                         // title
                         button.text("");
                     }
@@ -319,21 +336,24 @@ note: edit only www/all/index.html
 
                         simulate_press_eject($(this), false, 2000);
 
-                        // youtube watch v=id
-                        var vid = $("#yt-watch").val();
+                        // youtube watch v=id or yt-playlist button (data-wid)
+                        var vid = $(this).attr("data-wid") || $("#yt-watch").val();
 
                         // remove everything, keep just id
                         // https://www.youtube.com/watch?v=identificator
                         vid = vid.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/, '');
 
-                        $.get( "/cgi-bin/tv.cgi",
-                                {
-                                    "yt-watch":     vid
-                                },
-                                alert_dbg,
-                                "text"
-                        );
-
+                        if (! vid) {
+                            alert(messages["wid-empty"]);
+                        } else {
+                            $.get("/cgi-bin/tv.cgi",
+                                    {
+                                        "yt-watch": vid
+                                    },
+                                    alert_dbg,
+                                    "text"
+                            );
+                        }
                     }
                     else {
 
@@ -402,6 +422,12 @@ note: edit only www/all/index.html
                         // pager init
                         youtube.pager_init(channel);
 
+                        // osd info
+                        //
+                        osd_show_text(messages["yt-getting-playlist"]);
+
+                        // get playlist
+                        //
                         $.get("/cgi-bin/tv.cgi",
                                 {
                                     "yt-list":  0, // placeholder
@@ -423,7 +449,7 @@ note: edit only www/all/index.html
                                     }
                                 },
                                 "text"
-                        )
+                        );
                     }
 
                     // youtube channel playlist move FORWARD / BACK
@@ -437,6 +463,10 @@ note: edit only www/all/index.html
                         // previous page
                         //
                         if (name == "yt-list-back" && youtube.list_page > 1) youtube.list_page--;
+
+                        // osd info
+                        //
+                        osd_show_text(messages["yt-getting-playlist"]);
 
                         $.get("/cgi-bin/tv.cgi",
                                 {
@@ -466,6 +496,9 @@ note: edit only www/all/index.html
 
                         var cmd = $(this).attr("data-cmd");
 
+                        // display osd info
+                        osd_show_text(messages[name]);
+
                         // exec cmd
                         $.get(  "/cgi-bin/tv.cgi",
                                 {
@@ -474,27 +507,6 @@ note: edit only www/all/index.html
                                 alert_dbg,
                                 "text"
                         )
-
-                        var cmd_to_osd_info = {
-                            "play":     "spustene",
-                            "pause":    "pozastavené",
-                            "ff":       "späť o 1 min",
-                            "rew":      "skok o 1 min"
-                        };
-
-                        var text = cmd_to_osd_info[cmd];
-
-                        // display osd info
-                        if ($text) {
-                            $.get("/cgi-bin/tv.cgi",
-                                    {
-                                        "show-text": text
-                                    },
-                                    alert_dbg,
-                                    "text"
-                            )
-                        }
-
                     }
 
                     // show-text has show-text parameter
@@ -504,14 +516,9 @@ note: edit only www/all/index.html
                         // text parameter
                         // ?show-text=this+is+text
                         var text = $("#text").val();
-                        $.get(  "/cgi-bin/tv.cgi",
-                                {
-                                    "show-text": text
-                                },
-                                alert_dbg,
-                                "text"
-                        )
+                        osd_show_text(text);
                     }
+
                     // show active channel EPG
                     //
                     else if (name == "program") {
@@ -533,6 +540,9 @@ note: edit only www/all/index.html
                                         "text"
                                 );
                         } else {
+
+                            // remove dvb_ prefix, _HD suffix
+                            title = title.replace(/^dvb /, '').replace(/ HD$/, '');
 
                             $.get( "/cgi-bin/tv.cgi",
                                     {
