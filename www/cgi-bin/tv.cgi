@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.05.22"
+VER="2020.05.24"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -12,9 +12,20 @@ echo "Content-Type: text/plain"; echo
 
 [ $DBG ] && (echo "DBG: QUERY_STRING:${QUERY_STRING}"; echo)
 
-# shutdown (without sudo) for xubuntu
+# shutdown (without sudo)
 #
-shutdown="xfce4-session-logout --halt"
+shutdown="/sbin/poweroff"
+
+# directories
+#
+dirbin="bin"
+dirm3u8="/home/iptv/m3u8"
+#dirm3u8="../../m3u8"
+
+# playlists
+#
+plistraw="tv.m3u8.raw"
+plistenv="tv-env.m3u8"
 
 # json
 #
@@ -29,12 +40,8 @@ function json
 function refresh_tokens
 {
     local force=$1
-    local srcplist="tv.m3u8.raw"
-    local dstplist="tv-env.m3u8"
-    local bin="bin"
-    local m3u8="$bin/../m3u8"
 
-    $bin/envsubst-playlist.sh "$m3u8/$srcplist" "$m3u8/$dstplist" "$force"
+    $bin/envsubst-playlist.sh "$dirm3u8/$plistraw" "$dirm3u8/$plistenv" "$force"
 }
 
 # split by &
@@ -72,9 +79,9 @@ case $CMD in
                 #if [[ $channel =~ STV1|STV2|STV3|STV4|DAJTO|DOMA|MARKÍZA ]]
                 if [[ $channel =~ DAJTO|DOMA|MARKÍZA ]]
                 then
-                    refresh_tokens
                     # loadlist <playlist> [replace|append] - not required ?
-                    r=$( echo '{ "command": ["loadlist", "tv-env.m3u8", "replace"] }' | socat - /tmp/mpvsocket )
+                    refresh_tokens && \
+                    r=$( echo '{ "command": ["loadlist", "'$dirm3u8/$plistenv'", "replace"] }' | socat - /tmp/mpvsocket )
                 fi
                 r=$( echo "script-message-to channel_by_name channel \"$channel\"" | socat - /tmp/mpvsocket )
                 ;;
@@ -139,20 +146,15 @@ case $CMD in
 
     # get program
     get-epg)
-                # remove leading dvbt_, remove trailing _HD
-                ch=${channel#dvbt }; ch=${ch% HD}
-                # get epg
-                json=$( ./epg.py -title "${ch}" -offset ${offset} -bar ${barsize} -epg )
+                json=$( ./epg.py -title "${channel}" -offset ${offset} -bar ${barsize} -epg )
                 # output
                 echo "$json"
                 ;;
 
     # get program list
     get-epg-list)
-                # remove leading dvbt_, remove trailing _HD
-                ch=${channel#dvbt }; ch=${ch% HD}
                 # get epg
-                json=$( ./epg.py -title "${ch}" -offset ${offset} -epg-list ${get_epg_list} )
+                json=$( ./epg.py -title "${channel}" -offset ${offset} -epg-list ${get_epg_list} )
                 # output
                 echo "$json"
                 ;;
@@ -174,9 +176,10 @@ case $CMD in
                 case $playlist in
 
                 reload)
+                    r=$( echo "show-text \"obnovenie ...\"" | socat - /tmp/mpvsocket )
                     refresh_tokens "force"
                     # loadlist <playlist> [replace|append] - not required ?
-                    r=$( echo '{ "command": ["loadlist", "tv-env.m3u8", "replace"] }' | socat - /tmp/mpvsocket )
+                    r=$( echo '{ "command": ["loadlist", "'$dirm3u8/$plistenv'", "replace"] }' | socat - /tmp/mpvsocket )
                     ;;
 
                 playlist-prev | playlist-next)
@@ -197,6 +200,7 @@ case $CMD in
                     ;;
 
                 shutdown)
+                    r=$( echo "show-text \"vypínanie ...\"" | socat - /tmp/mpvsocket )
                     r=$( $shutdown )
                     ;;
 
