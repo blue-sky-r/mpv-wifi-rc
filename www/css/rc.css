@@ -58,6 +58,26 @@ body {
     vertical-align: middle;
 }
 
+.textbutton100 {
+    font-size: 1em;
+    font-family: sans-serif;
+    font-weight: bold;
+    height: 35px;
+    /*text-align: left;*/
+    vertical-align: middle;
+    width: 100%
+}
+
+.textpage {
+    font-size: 1em;
+    font-family: sans-serif;
+    font-weight: bold;
+    width: 262px;
+    text-align: center;
+    display: inline-block;
+    /*background-color: lightgray;*/
+}
+
 .radio {
     /* radio buttons tag */
 }
@@ -88,6 +108,78 @@ button[disabled] {
 /*    background-image: url(/logo/filename.png); */
 /* } */
 
+/* DVB-T2 */
+
+button[name="dvb STV1"] {
+    background-image: url(/logo/STV1.png);
+}
+
+button[name="dvb STV2"] {
+    background-image: url(/logo/STV2.png);
+}
+
+button[name="dvb STV3"] {
+    background-image: url(/logo/STV3.png);
+}
+
+button[name="dvb Joj"] {
+    background-image: url(/logo/joj.png);
+}
+
+button[name="dvb Joj+"] {
+    background-image: url(/logo/joj_plus.png);
+}
+
+button[name="dvb TA3"] {
+    background-image: url(/logo/TA3.png);
+}
+
+button[name="dvb Wau"] {
+    background-image: url(/logo/wau.png);
+}
+
+button[name="dvb Osem"] {
+    background-image: url(/logo/tv8.png);
+}
+
+button[name="dvb Hronka"] {
+    background-image: url(/logo/hronka.png);
+}
+
+button[name="dvb Senzi"] {
+    background-image: url(/logo/senzi.png);
+}
+
+button[name="dvb Noe"] {
+    background-image: url(/logo/noe.png);
+}
+
+button[name="dvb SSTV"] {
+    background-image: url(/logo/SSTV.png);
+}
+
+button[name="dvb Promo"] {
+    background-image: url(/logo/promo.png);
+}
+
+button[name="dvb Lux"] {
+    background-image: url(/logo/lux.png);
+}
+
+button[name="dvb STV1 HD"] {
+    background-image: url(/logo/STV1-HD.png);
+}
+
+button[name="dvb STV2 HD"] {
+    background-image: url(/logo/STV2-HD.png);
+}
+
+button[name="dvb STV3 HD"] {
+    background-image: url(/logo/STV3-HD.png);
+}
+
+/* iptv */
+
 button[name="Dajto"] {
     background-image: url(/logo/dajto.png);
 }
@@ -109,15 +201,11 @@ button[name="STV2"] {
 }
 
 button[name="STV3"] {
-    background-image: url(/logo/stv3.png);
+    background-image: url(/logo/STV3.png);
 }
 
-button[name="STV4"] {
-    background-image: url(/logo/stv4.png);
-}
-
-button[name="Dr. Bukovsky"] {
-    background-image: url(/logo/dr.bukovsky.png);
+button[name="NR.SR"] {
+    background-image: url(/logo/nr-sr.png);
 }
 
 button[name="Joj"] {
@@ -154,6 +242,10 @@ button[name="Osem"] {
 
 button[name="TV Hronka"] {
     background-image: url(/logo/hronka.png);
+}
+
+button[name="SSTV"] {
+    background-image: url(/logo/SSTV.png);
 }
 
 button[name="ČT1"] {
@@ -456,6 +548,42 @@ button[name="CBC news"] {
     background-image: url(/logo/cbc-news.png);
 }
 
+/* youtube channels */
+
+button[name="Dr. Bukovsky"] {
+    background-image: url(/logo/dr.bukovsky.png);
+}
+
+button[name="Vesmir"] {
+    background-image: url(/logo/vesmir.png);
+}
+
+button[name="Pjakin"] {
+    background-image: url(/logo/pjakin.png);
+}
+
 button[name="InfoWars.com"] {
     background-image: url(/logo/infowars-com.png);
+}
+
+button[name="GoschaTV"] {
+    background-image: url(/logo/goschatv.png);
+}
+
+/* player control */
+
+button[name="play"] {
+    background-image: url(/logo/play.png);
+}
+
+button[name="pause"] {
+    background-image: url(/logo/pause.png);
+}
+
+button[name="rew"] {
+    background-image: url(/logo/rew.png);
+}
+
+button[name="ff"] {
+    background-image: url(/logo/ff.png);
 }
