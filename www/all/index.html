@@ -541,8 +541,8 @@ note: edit only www/all/index.html
                                 );
                         } else {
 
-                            // remove dvb_ prefix, _HD suffix
-                            title = title.replace(/^dvb /, '').replace(/ HD$/, '');
+                            // remove dvb_ prefix, _HD suffix, _EN or _RU suffix
+                            title = title.replace(/^dvb /, '').replace(/ HD$/, '').replace(/ (RU|EN)$/, '');
 
                             $.get( "/cgi-bin/tv.cgi",
                                     {
