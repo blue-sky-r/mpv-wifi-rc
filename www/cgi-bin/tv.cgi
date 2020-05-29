@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.05.24"
+VER="2020.05.28"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -12,9 +12,9 @@ echo "Content-Type: text/plain"; echo
 
 [ $DBG ] && (echo "DBG: QUERY_STRING:${QUERY_STRING}"; echo)
 
-# shutdown (without sudo)
+# shutdown (add to sudoers: iptv ALL=NOPAASSWD:/sbin/poweroff)
 #
-shutdown="/sbin/poweroff"
+shutdown="sudo /sbin/poweroff"
 
 # directories
 #
@@ -200,7 +200,9 @@ case $CMD in
                     ;;
 
                 shutdown)
+                    # osd info
                     r=$( echo "show-text \"vypínanie ...\"" | socat - /tmp/mpvsocket )
+                    # shutdown
                     r=$( $shutdown )
                     ;;
 
