@@ -2,21 +2,31 @@
 
 # version tag
 #
-VER="2020.05.30"
+VER="2020.06.02"
 
 # debug output to the caller (will show as pop-up alert)
 #
 DBG=
 
+# log to logger (empty for no logging)
+#
+LOG='tv.cgi'
+
 echo "Content-Type: text/plain"; echo
 
-[ $DBG ] && (echo "DBG: QUERY_STRING:${QUERY_STRING}"; echo)
+# debug or logger output
+#
+function msg()
+{
+    [   $DBG ] && echo -e "DBG: $1" && echo
+    [ ! $DBG ] && [ -n "$LOG" ] && logger -t "$LOG" "$@"
+}
 
-# shutdown (add to sudoers: iptv ALL=NOPASSWD:/sbin/poweroff)
+msg "QUERY_STRING:${QUERY_STRING}"
+
+# shutdown (add to sudoers: iptv    ALL = (ALL) NOPASSWD: /sbin/poweroff)
 #
 shutdown="sudo /sbin/poweroff"
-# iptv    localhost = NOPASSWD: /bin/systemctl poweroff
-#shutdown="sudo /bin/systemctl --no-wall poweroff"
 
 # directories
 #
@@ -50,6 +60,59 @@ function refresh_tokens
     $dirbin/envsubst-playlist.sh "$dirm3u8/$plistraw" "$dirm3u8/$plistenv" "$force"
 }
 
+# send to mpv
+#
+function mpv_send
+{
+    local str
+
+    for s in "$@"
+    {
+        # the first string without quotes
+        [ -z "$str" ] && str=$s && continue
+        # add only non empty strings
+        [ -n "$s" ] && str="$str \"$s\""
+    }
+
+    # optional log
+    msg "mpv_send: $str"
+    #
+    echo "$str" | $mpvsocket
+}
+
+# command to mpv
+#
+function mpv_cmd
+{
+    local str
+    local sep
+
+    for s in "$@"
+    {
+        str="${str}${sep}\"${s}\""
+        sep=', '
+    }
+
+    # optional log
+    msg "mpv_cmd: [ $str ]"
+    #
+    echo "{ \"command\": [ $str ] }" | $mpvsocket
+}
+
+# display OSD
+#
+function osd
+{
+    # escape double-quotes
+    local txt=${1//\"/\\\"}
+    local time=$2
+
+    # optional log
+    msg "osd: $txt, time:$time"
+    #
+    mpv_send "show-text" "$txt" "$time"
+}
+
 # split by &
 #
 for keyval in ${QUERY_STRING//&/ }
@@ -64,7 +127,7 @@ for keyval in ${QUERY_STRING//&/ }
 	# %xy -> char
 	val=$( printf '%b' "${val//%/\\x}" )
 
-	[ $DBG ] && echo "keyval($keyval) => key($key) val($val)"
+	msg "keyval($keyval) => key($key) val($val)"
 
     # use the first key as command CMD
     #
@@ -72,7 +135,7 @@ for keyval in ${QUERY_STRING//&/ }
 
     # define parametric variable assignment
     #
-    [ -n "$val" ] && declare -r ${key//-/_}="$val" && [ $DBG ] && echo "declared variable ${key//-/_} = $val"
+    [ -n "$val" ] && declare -r ${key//-/_}="$val" && msg "declared variable ${key//-/_} = $val"
 }
 
 # execute command CMD
@@ -86,60 +149,55 @@ case $CMD in
                 if [[ $channel =~ DAJTO|DOMA|MARKÍZA ]]
                 then
                     # loadlist <playlist> [replace|append] - not required ?
-                    refresh_tokens && \
-                    r=$( echo '{ "command": ["loadlist", "'$dirm3u8/$plistenv'", "replace"] }' | $mpvsocket )
+                    refresh_tokens && r=$( mpv_cmd "loadlist" "$dirm3u8/$plistenv" "replace" )
                 fi
-                r=$( echo "script-message-to channel_by_name channel \"$channel\"" | $mpvsocket )
+                r=$( mpv_send "script-message-to channel_by_name channel" "$channel" )
                 ;;
 
     # survey-range-playlist=playlist & start=name & end=name [& osd=message]
     survey-range-playlist)
                 # survey_range_playlist "chan 1" "chan 10" ["playlist.m3u8" ["OSD message"]]
-                r=$( echo "script-message-to channel_survey survey_range_playlist \
-                    \"${start}\" \"${end}\" \"${survey_range_playlist}\" \"${osd}\" " \
-                    | $mpvsocket )
+                r=$( mpv_send "script-message-to channel_survey survey_range_playlist" "$start" "$end" "$survey_range_playlist" "$osd" )
                 ;;
 
     # survey-list-playlist=playlist & list=list [ & osd=message]
     survey-list-playlist)
                 # survey_list_playlist "chan 1,chan 10" ["playlist.m3u8" ["OSD message"]]
-                r=$( echo "script-message-to channel_survey survey_list_playlist \
-                    \"${list}\" \"${survey_list_playlist}\" \"${osd}\" " \
-                    | $mpvsocket )
+                r=$( mpv_send "script-message-to channel_survey survey_list_playlist" "$list" "$survey_list_playlist" "$osd" )
                 ;;
 
     # show-text=test msg
-    show-text)	r=$( echo "show-text \"${show_text}\"" | $mpvsocket )
+    show-text)	r=$( osd "$show_text" )
                 ;;
 
     # show-text=test msg with ass control codes
     show-text-ass-cc)
                 # get control code for disabling escaping ass sequences
-    	        esc0=$( echo '{ "command": ["get_property", "osd-ass-cc/0"] }' | $mpvsocket | awk -F'"' '/data/ {printf "%s",$4}' )
+    	        esc0=$( mpv_cmd "get_property" "osd-ass-cc/0" | awk -F'"' '/data/ {printf "%s",$4}' )
     	        #esc0='\xfd'
                 # execute show-text and escape double-quotes in text
-                r=$( echo "show-text \"${esc0}${show_text_ass_cc//\"/\\\"}\" ${time}"| $mpvsocket )
-                #r=$( echo "{ \"command\": [\"show-text\", \"${esc0}${show_text_ass_cc//\"/\\\"}\", ${time}] }" | socat - /tmp/mpvsocket )
+                #r=$( mpv_send "show-text" "${esc0}${show_text_ass_cc//\"/\\\"}" "$time" )
+                r=$( osd "${esc0}${show_text_ass_cc}" "$time" )
                 ;;
 
     # clock
-    clock)		r=$( echo "keypress h" | $mpvsocket )
+    clock)		r=$( mpv_send "keypress h" )
                 ;;
 
     # email
-    email)		r=$( echo "keypress e" | $mpvsocket )
+    email)		r=$( mpv_send "keypress e" )
                 ;;
 
     # weather
-    weather)	r=$( echo "keypress w" | $mpvsocket )
+    weather)	r=$( mpv_send "keypress w" )
                 ;;
 
     # info
-    info)		r=$( echo "keypress i" | $mpvsocket )
+    info)		r=$( mpv_send "keypress i" )
                 ;;
 
     # get active channel title/name (json)
-    get-title)	json=$( echo '{ "command": ["get_property", "media-title"] }' | $mpvsocket )
+    get-title)	json=$( mpv_cmd "get_property" "media-title" )
                 # output json: {"data":"Wau,,0","error":"success"}
                 echo "$json"
                 ;;
@@ -147,7 +205,7 @@ case $CMD in
     # direct command
     # '{ "command": ["set", "pause", "yes"] }'
     # '{ "command": ["seek", "-10"] }'
-    cmd)        r=$( echo '{ "command": ["'${cmd// /\",\"}'"] }' | $mpvsocket )
+    cmd)        r=$( mpv_cmd ${cmd} )
                 ;;
 
     # get program
@@ -172,7 +230,7 @@ case $CMD in
     # "light":"display","chroma-location":"mpeg2/4/h264","stereo-in":"mono","rotate":0},"error":"success"}
     # get active channel title/name (json)
     get-property)
-                json=$( echo '{ "command": ["get_property", "'${get_property}'"] }' | $mpvsocket )
+                json=$( mpv_cmd "get_property" "${get_property}" )
                 # output json
                 echo "$json"
                 ;;
@@ -182,32 +240,36 @@ case $CMD in
                 case $playlist in
 
                 reload)
-                    r=$( echo "show-text \"obnovenie ...\"" | $mpvsocket )
+                    osd "obnovenie ..."
                     refresh_tokens "force"
                     # loadlist <playlist> [replace|append] - not required ?
-                    r=$( echo '{ "command": ["loadlist", "'$dirm3u8/$plistenv'", "replace"] }' | $mpvsocket )
+                    #r=$( echo '{ "command": ["loadlist", "'$dirm3u8/$plistenv'", "replace"] }' | $mpvsocket )
+                    r=$( mpv_cmd "loadlist" "$dirm3u8/$plistenv" "replace" )
                     ;;
 
                 playlist-prev | playlist-next)
-                    r=$( echo '{ "command": ["'${playlist}'"] }' | $mpvsocket )
+                    #r=$( echo '{ "command": ["'${playlist}'"] }' | $mpvsocket )
+                    r=$( mpv_cmd "${playlist}" )
                     ;;
 
                 esc)
+                    osd "reštartovanie ..."
                     # save current channel
                     property='playlist-pos-1'
                     # {"data":1,"request_id":0,"error":"success"}
-                    pos1=$( echo '{ "command": ["get_property", "'${property}'"] }' | $mpvsocket | awk -F:\|, '{print $2}')
+                    pos1=$( mpv_cmd "get_property" "${property}" | awk -F:\|, '{print $2}' )
                     # no response as mpv will quit
-                    echo "keypress ESC" | $mpvsocket
+                    mpv_send "keypress ESC"
                     # wait for mpv restart
-                    sleep 2.8
+                    sleep 3
                     # restore saved channel
-                    echo '{ "command": ["set_property", "'${property}'", '${pos1}'] }' | $mpvsocket
+                    #echo '{ "command": ["set_property", "'${property}'", '${pos1}'] }' | $mpvsocket
+                    r=$( mpv_cmd "set_property" "${property}" "${pos1}" )
                     ;;
 
                 shutdown)
                     # osd info
-                    r=$( echo "show-text \"vypínanie ...\"" | $mpvsocket )
+                    osd "vypínanie ..."
                     # shutdown
                     r=$( $shutdown )
                     ;;
@@ -226,7 +288,7 @@ case $CMD in
 
     yt-watch)
                 url="ytdl://www.youtube.com/watch?v=$yt_watch"
-                r=$( echo '{ "command": ["loadfile", "'${url}'", "replace"] }' | $mpvsocket )
+                r=$( mpv_cmd "loadfile" "${url}" "replace" )
                 ;;
 
     *)		    echo "unrecognized command:$CMD - query:$QUERY_STRING"
@@ -235,5 +297,5 @@ esac
 
 # result output from mpv socket
 #
-[ $DBG ] && echo $r
+msg "result: $r"
 
