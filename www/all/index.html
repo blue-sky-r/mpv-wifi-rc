@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2020.05.24
+version: 2020.05.27
 
 note: edit only www/all/index.html
 
@@ -26,7 +26,7 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.05.24">
+        <meta name="version" content="2020.05.26">
 
     <script>
         $(document).ready(function(){
@@ -87,6 +87,11 @@ note: edit only www/all/index.html
                 // yyyymmddhhmm -> hh:mm
                 hhmm: function (dt) {
                     return dt.length == 12 ? dt.substr(-4,2) + ":" + dt.substr(-2,2) : ' ';
+                },
+
+                // remove dvb prefix, HD suffix, RU/EN suffix to get channel name
+                title2channel: function (title) {
+                    return title.replace(/^dvb /, '').replace(/ HD$/, '').replace(/ (RU|EN)$/, '');
                 },
 
                 // test pattern x . y with font size fs
@@ -191,8 +196,8 @@ note: edit only www/all/index.html
                 // playlist page
                 list_page: 1,
 
-                // title max length (for buttons)
-                title_max: 55,
+                // title max length (for buttons) (55 for tde desktop, 60 for ipad3)
+                title_max: 60,
 
                 // pager info text
                 pager_txt_format: "[ stránka: %d ]",
@@ -542,12 +547,12 @@ note: edit only www/all/index.html
                         } else {
 
                             // remove dvb_ prefix, _HD suffix, _EN or _RU suffix
-                            title = title.replace(/^dvb /, '').replace(/ HD$/, '').replace(/ (RU|EN)$/, '');
+                            var channel = osd_epg.title2channel(title);
 
                             $.get( "/cgi-bin/tv.cgi",
                                     {
                                         "get-epg": 0,
-                                        "channel": title,
+                                        "channel": channel,
                                         "offset":  osd_epg.offset,
                                         "barsize": osd_epg.barsize
                                     },
@@ -589,7 +594,7 @@ note: edit only www/all/index.html
                     else if (name == "playlist") {
 
                         // playlist command
-                        var command = $(this).data("command")
+                        var command = $(this).data("command");
 
                         $.get( "/cgi-bin/tv.cgi",
                                 {
@@ -601,7 +606,7 @@ note: edit only www/all/index.html
 
                         // as the channel has been changed update button pressed after short delay (except restart via ESC)
                         //
-                        if (command != "esc")
+                        if (command != "esc" || command != "shutdown")
                             setTimeout(function() { press_button_with_active_channel(); }, 1000);
 
                     }
@@ -609,6 +614,9 @@ note: edit only www/all/index.html
 
                         // button pressed = active channel
                         var title = $(".radio.buttondown").attr("name");
+
+                        // remove dvb_ prefix, _HD suffix, _EN or _RU suffix
+                        var channel = osd_epg.title2channel(title);
 
                         // limit (page size)
                         var size = $(this).data("size")
@@ -619,7 +627,7 @@ note: edit only www/all/index.html
                         $.get( "/cgi-bin/tv.cgi",
                                 {
                                     "get-epg-list": size,
-                                    "channel":      title,
+                                    "channel":      channel,
                                     "offset":       osd_epg.offset
                                 },
                                 function (data, status) {
@@ -695,7 +703,7 @@ note: edit only www/all/index.html
         <button class="button radio" name="dvb STV2 HD"></button>
         <button class="button radio" name="dvb STV3 HD"></button>
 
-    <h4><span>sloveské kanály</span></h4>
+    <h4><span>slovenské kanály</span></h4>
         <button class="button radio" name="Dajto"></button>
         <button class="button radio" name="Doma"></button>
         <button class="button radio" name="Markíza"></button>
@@ -811,7 +819,7 @@ note: edit only www/all/index.html
         <button class="button radio" name="FilmBox+"></button>
         <button class="button radio" name="FilmBox Family"></button>
         <button class="button radio" name="E!"></button>
-        <button class="button radio" name="HBO 3"></button>
+        <button class="button radio" name="TLC"></button>
         <br>
         <button class="button radio" name="Cinemax"></button>
         <button class="button radio" name="Cinemax 2"></button>
@@ -821,6 +829,7 @@ note: edit only www/all/index.html
         <button class="button radio" name="AXN"></button>
         <button class="button radio" name="AXN White"></button>
         <button class="button radio" name="AXN Black"></button>
+        <button class="button radio" name="HBO 3"></button>
         <br>
         <button class="button radio" name="Kino svet"></button>
         <button class="button radio" name="TV Paprika"></button>
