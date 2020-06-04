@@ -278,7 +278,11 @@ note: edit only www/all/index.html
 
             function simulate_press_eject(button, eject, delayup) {
 
-                //console.log('simulate_press_eject(buton='+button.attr('name')+', eject='+eject+', delayup='+delayup);
+                console.log('simulate_press_eject(buton='+button.attr('name')+', eject='+eject+', delayup='+delayup);
+
+                // if button not found, do nothing
+                //
+                if (! button || ! button.length) return;
 
                 // eject currently pressed button
                 //
@@ -729,6 +733,7 @@ note: edit only www/all/index.html
 
     <h4><span>akcia</span></h4>
         <p align="center">
+            <button class="button textbutton single" name="playlist" data-command="meteogram">48 hod</button>
             <button class="button textbutton single" name="playlist" data-command="shutdown">vypni</button>
         </p>
         <button class="button textbutton single" name="playlist" data-command="esc">ESC</button>
