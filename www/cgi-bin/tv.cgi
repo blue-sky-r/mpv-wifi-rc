@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.06.02"
+VER="2020.06.03"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -12,6 +12,8 @@ DBG=
 #
 LOG='tv.cgi'
 
+# content-type
+#
 echo "Content-Type: text/plain"; echo
 
 # debug or logger output
@@ -66,6 +68,8 @@ function mpv_send
 {
     local str
 
+    # build str=par1 "par2" ... "parX"
+    #
     for s in "$@"
     {
         # the first string without quotes
@@ -87,6 +91,8 @@ function mpv_cmd
     local str
     local sep
 
+    # build str="par1","par2"..."parX"
+    #
     for s in "$@"
     {
         str="${str}${sep}\"${s}\""
@@ -146,7 +152,7 @@ case $CMD in
     channel)
                 # refresh auth tokens only for specific channels
                 #if [[ $channel =~ STV1|STV2|STV3|STV4|DAJTO|DOMA|MARKÍZA ]]
-                if [[ $channel =~ DAJTO|DOMA|MARKÍZA ]]
+                if [[ $channel =~ Dajto|Doma|Markíza ]]
                 then
                     # loadlist <playlist> [replace|append] - not required ?
                     refresh_tokens && r=$( mpv_cmd "loadlist" "$dirm3u8/$plistenv" "replace" )
@@ -263,15 +269,19 @@ case $CMD in
                     # wait for mpv restart
                     sleep 3
                     # restore saved channel
-                    #echo '{ "command": ["set_property", "'${property}'", '${pos1}'] }' | $mpvsocket
-                    r=$( mpv_cmd "set_property" "${property}" "${pos1}" )
+                    #r=$( mpv_cmd "set_property" "${property}" "${pos1}" )
+                    mpv_cmd "set_property" "${property}" "${pos1}"
+                    ;;
+
+                meteogram)
+                    r=$( export DISPLAY=:0; $dirbin/display-meteogram.sh 2>&1 )
                     ;;
 
                 shutdown)
                     # osd info
                     osd "vypínanie ..."
                     # shutdown
-                    r=$( $shutdown )
+                    r=$( export DISPLAY=:0; $shutdown 2>&1 )
                     ;;
 
                 esac
@@ -297,5 +307,5 @@ esac
 
 # result output from mpv socket
 #
-msg "result: $r"
+msg "result: [$r]"
 
