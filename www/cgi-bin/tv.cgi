@@ -267,10 +267,9 @@ case $CMD in
                     # no response as mpv will quit
                     mpv_send "keypress ESC"
                     # wait for mpv restart
-                    sleep 3
+                    sleep 2.8
                     # restore saved channel
-                    #r=$( mpv_cmd "set_property" "${property}" "${pos1}" )
-                    mpv_cmd "set_property" "${property}" "${pos1}"
+                    r=$( mpv_cmd "set_property" "${property}" "${pos1}" )
                     ;;
 
                 meteogram)
@@ -281,7 +280,8 @@ case $CMD in
                     # osd info
                     osd "vypínanie ..."
                     # shutdown
-                    r=$( export DISPLAY=:0; $shutdown 2>&1 )
+#                    r=$( export DISPLAY=:0; $shutdown 2>&1 )
+                    mpv_send "keypress CRTL+r"
                     ;;
 
                 esac
@@ -291,7 +291,7 @@ case $CMD in
     yt-list)
                 json=$( youtube-dl -j --restrict-filenames --socket-timeout 5 \
                 --playlist-start $idxfrom --playlist-end $idxto --flat-playlist \
-                http://www.youtube.com/channel/${channel}/videos | tr "\n" "," | sed -e 's/,$//' )
+                http://www.youtube.com/${channel} | tr "\n" "," | sed -e 's/,$//' )
                 # output json
                 echo "[ $json ]"
                 ;;
