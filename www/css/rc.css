@@ -65,7 +65,8 @@ body {
     height: 35px;
     /*text-align: left;*/
     vertical-align: middle;
-    width: 100%
+    /* 100% is wider with shadow than other elements */
+    width: 98%
 }
 
 .textpage {
@@ -388,6 +389,10 @@ button[name="AXN Black"] {
     background-image: url(/logo/axn-black.png);
 }
 
+button[name="TLC"] {
+    background-image: url(/logo/tlc.png);
+}
+
 button[name="Očko Gold"] {
     background-image: url(/logo/ocko.png);
 }
@@ -566,8 +571,24 @@ button[name="InfoWars.com"] {
     background-image: url(/logo/infowars-com.png);
 }
 
+button[name="Harabin"] {
+    background-image: url(/logo/harabin.png);
+}
+
 button[name="GoschaTV"] {
     background-image: url(/logo/goschatv.png);
+}
+
+button[name="ZemVek"] {
+    background-image: url(/logo/zem-vek.png);
+}
+
+button[name="PolMedia"] {
+    background-image: url(/logo/polmedia.png);
+}
+
+button[name="FilmyCesky"] {
+    background-image: url(/logo/filmy-cesky.png);
 }
 
 /* player control */
