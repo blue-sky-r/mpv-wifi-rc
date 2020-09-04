@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2020.08.31
+version: 2020.09.03
 
 note: edit only www/all/index.html
 
@@ -26,7 +26,7 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.08.31">
+        <meta name="version" content="2020.09.03">
 
     <script>
         $(document).ready(function(){
@@ -298,6 +298,9 @@ note: edit only www/all/index.html
             }
 
             function press_button_with_active_channel() {
+
+                console.log('press_button_with_active_channel()');
+
                 $.get( "/cgi-bin/tv.cgi", "get-title",
                         function(data, status) {
                             try {
@@ -608,10 +611,12 @@ note: edit only www/all/index.html
                                 "text"
                         );
 
-                        // as the channel has been changed update button pressed after short delay (except restart via ESC)
+                        // as the channel has been changed by next/prev update button pressed
+                        // after short delay (except restart via ESC)
                         //
-                        if (command != "esc" || command != "shutdown")
-                            setTimeout(function() { press_button_with_active_channel(); }, 1000);
+                        if (command != "esc" && command != "shutdown") {
+                            setTimeout(function () { press_button_with_active_channel(); }, 1000);
+                        }
 
                     }
                     else if (name == "program-list") {
@@ -757,7 +762,7 @@ note: edit only www/all/index.html
         <button class="button single ytchannel" data-channel="channel/UCbmT0HqNDwOdJMTbRwZMmzA/videos" name="GoschaTV"></button>
         <button class="button single ytchannel" data-channel="user/zemavek/videos" name="ZemVek"></button>
         <button class="button single ytchannel" data-channel="playlist?list=PL2UI2P0sy-4CAfMNxiYiAgm90SGliTTTx" name="PolMedia"></button>
-        <button class="button single ytchannel" data-channel="c/FILMY%C4%8CESKYAZADARMO/videos" name="FilmyCesky"></button>
+        <button class="button single ytchannel" data-channel="channel/UCoemQ3xsaVdIYtnh2B7K3Eg" name="FilmyCesky"></button>
         <br>
         <span id="yt-playlist">
             <button class="button textbutton single" name="yt-list-back">< -</button>
