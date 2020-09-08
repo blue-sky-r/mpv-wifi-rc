@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.06.03"
+VER="2020.08.31"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -291,7 +291,9 @@ case $CMD in
     yt-list)
                 json=$( youtube-dl -j --restrict-filenames --socket-timeout 5 \
                 --playlist-start $idxfrom --playlist-end $idxto --flat-playlist \
-                http://www.youtube.com/${channel} | tr "\n" "," | sed -e 's/,$//' )
+                http://www.youtube.com/${channel} \
+                | sed -e 's/\[Cel\\u00fd Film v \\u010ce\\u0161tin\\u011b\]//g' -e 's/\[\?\\u010cesk\\u00fd Dabing\]\?//g' \
+                | tr "\n" "," | sed -e 's/,$//' )
                 # output json
                 echo "[ $json ]"
                 ;;
@@ -299,6 +301,8 @@ case $CMD in
     yt-watch)
                 url="ytdl://www.youtube.com/watch?v=$yt_watch"
                 r=$( mpv_cmd "loadfile" "${url}" "replace" )
+                # autoplay
+                r=$( mpv_cmd '{ "command": ["set", "pause", "no"] }' )
                 ;;
 
     *)		    echo "unrecognized command:$CMD - query:$QUERY_STRING"
