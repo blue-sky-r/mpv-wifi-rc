@@ -302,6 +302,7 @@ case $CMD in
                 url="ytdl://www.youtube.com/watch?v=$yt_watch"
                 r=$( mpv_cmd "loadfile" "${url}" "replace" )
                 # autoplay
+                sleep 3
                 r=$( mpv_cmd '{ "command": ["set", "pause", "no"] }' )
                 ;;
 
