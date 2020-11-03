@@ -575,6 +575,10 @@ button[name="Harabin"] {
     background-image: url(/logo/harabin.png);
 }
 
+button[name="Chmelar"] {
+    background-image: url(/logo/chmelar.png);
+}
+
 button[name="GoschaTV"] {
     background-image: url(/logo/goschatv.png);
 }
