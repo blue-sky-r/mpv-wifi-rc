@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2020.09.03
+version: 2020.11.16
 
 note: edit only www/all/index.html
 
@@ -26,7 +26,7 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.09.03">
+        <meta name="version" content="2020.11.16">
 
     <script>
         $(document).ready(function(){
@@ -307,7 +307,9 @@ note: edit only www/all/index.html
                                 // {"data":"Wau,,0","error":"success"}
                                 var title = $.parseJSON(data).data.replace(/,,0$/, '');
 
-                                simulate_press_eject($("button[name='"+ title +"']"), true, 0);
+                                console.log('get-title returns title='+title);
+
+                                if (title) simulate_press_eject($("button[name='"+ title +"']"), true, 0);
 
                             } catch(e) {
                                 if (data.indexOf('socat') > 1 && data.indexOf('Connection refused') > 1) {
@@ -340,6 +342,8 @@ note: edit only www/all/index.html
                 //
                 var name = $(this).prop("name");
 
+                console.log('button.click() name='+name);
+
                 // channel-buttons, yt-play have radio class
                 //
                 if ($(this).hasClass("radio")) {
@@ -353,7 +357,8 @@ note: edit only www/all/index.html
 
                         // remove everything, keep just id
                         // https://www.youtube.com/watch?v=identificator
-                        vid = vid.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/, '');
+                        //vid = vid.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/, '');
+                        vid = vid.replace(/https?:/, 'ytdl:');
 
                         if (! vid) {
                             alert(messages["wid-empty"]);
@@ -988,6 +993,18 @@ note: edit only www/all/index.html
         <button class="button textbutton1em radio" name="Toronto CNT.West">Toronto CNT.West</button>
         <button class="button textbutton1em radio" name="Toronto CNT.East">Toronto CNT.East</button>
         <button class="button textbutton1em radio" name="Niagara Falls">Niagara Falls</button>
+
+    <h4><span>vlaky</span></h4>
+
+        <button class="button textbutton1em radio" name="Tokyo JP">Tokyo</button>
+        <button class="button textbutton1em radio" name="Tokyo Shinjuku JP">Tokyo Shinjuku</button>
+        <button class="button textbutton1em radio" name="Hokkaido JP">Hokkaido</button>
+        <button class="button textbutton1em radio" name="Bergen Line NO">Bergen Line Nórsko</button>
+        <br>
+        <button class="button textbutton1em radio" name="Flåm Line NO">Flåm Line Nórsko</button>
+        <button class="button textbutton1em radio" name="Autumn NO">Autumn Nórsko</button>
+        <button class="button textbutton1em radio" name="Winter NO">Winter Nórsko</button>
+        <button class="button textbutton1em radio" name="Bangkok MaeKlong TH">Bangkok MaeKlong</button>
 
     <h4><span>prehľad</span></h4>
 
