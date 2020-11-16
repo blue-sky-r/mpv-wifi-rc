@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.08.31"
+VER="2020.11.16"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -299,10 +299,9 @@ case $CMD in
                 ;;
 
     yt-watch)
-                url="ytdl://www.youtube.com/watch?v=$yt_watch"
-                r=$( mpv_cmd "loadfile" "${url}" "replace" )
+                r=$( mpv_cmd "loadfile" "${yt_watch}" "replace" )
                 # autoplay
-                sleep 3
+                sleep 8
                 r=$( mpv_cmd '{ "command": ["set", "pause", "no"] }' )
                 ;;
 

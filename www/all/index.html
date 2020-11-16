@@ -355,9 +355,7 @@ note: edit only www/all/index.html
                         // youtube watch v=id or yt-playlist button (data-wid)
                         var vid = $(this).attr("data-wid") || $("#yt-watch").val();
 
-                        // remove everything, keep just id
-                        // https://www.youtube.com/watch?v=identificator
-                        //vid = vid.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/, '');
+                        // replace http[s]:// -> ytdl://
                         vid = vid.replace(/https?:/, 'ytdl:');
 
                         if (! vid) {
