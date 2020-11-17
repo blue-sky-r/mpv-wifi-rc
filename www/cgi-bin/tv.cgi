@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.11.16"
+VER="2020.11.17"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -299,10 +299,11 @@ case $CMD in
                 ;;
 
     yt-watch)
-                r=$( mpv_cmd "loadfile" "${yt_watch}" "replace" )
+                [[ $yt_watch =~ ^[A-Za-z0-9]+$ ]] && url="ytdl://www.youtube.com/watch?v="
+                r=$( mpv_cmd "loadfile" "${url}${yt_watch}" "replace" )
                 # autoplay
                 sleep 8
-                r=$( mpv_cmd '{ "command": ["set", "pause", "no"] }' )
+                r=$( mpv_cmd "set pause no" )
                 ;;
 
     *)		    echo "unrecognized command:$CMD - query:$QUERY_STRING"
