@@ -299,7 +299,7 @@ case $CMD in
                 ;;
 
     yt-watch)
-                url=; [[ $yt_watch =~ ^[A-Za-z0-9-]+$ ]] && url="ytdl://www.youtube.com/watch?v="
+                url=; [[ $yt_watch =~ ^[A-Za-z0-9_-]+$ ]] && url="ytdl://www.youtube.com/watch?v="
                 r=$( mpv_cmd "loadfile" "${url}${yt_watch}" "replace" )
                 # autoplay
                 sleep 8
