@@ -257,6 +257,14 @@ button[name="ČT2"] {
     background-image: url(/logo/ct2.png);
 }
 
+button[name="ČT3"] {
+    background-image: url(/logo/ct3.png);
+}
+
+button[name="ČT24"] {
+    background-image: url(/logo/ct24.png);
+}
+
 button[name="AMC"] {
     background-image: url(/logo/amc.png);
 }
