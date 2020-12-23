@@ -249,6 +249,10 @@ button[name="SSTV"] {
     background-image: url(/logo/SSTV.png);
 }
 
+button[name="CE TV"] {
+    background-image: url(/logo/ce-tv.png);
+}
+
 button[name="ČT1"] {
     background-image: url(/logo/ct1.png);
 }
@@ -271,6 +275,22 @@ button[name="AMC"] {
 
 button[name="CS Film"] {
     background-image: url(/logo/csfilm.png);
+}
+
+button[name="CS History"] {
+    background-image: url(/logo/cs-hist.png);
+}
+
+button[name="CS Mystery"] {
+    background-image: url(/logo/cs-myst.png);
+}
+
+button[name="DTX"] {
+    background-image: url(/logo/dtx.png);
+}
+
+button[name="History"] {
+    background-image: url(/logo/history.png);
 }
 
 button[name="Film+"] {
@@ -337,8 +357,28 @@ button[name="Prima Max"] {
     background-image: url(/logo/prima_max.png);
 }
 
+button[name="Prima CNN"] {
+    background-image: url(/logo/prima-cnn.png);
+}
+
+button[name="Prima Krimi"] {
+    background-image: url(/logo/prima-krimi.png);
+}
+
+button[name="Prima Love"] {
+    background-image: url(/logo/prima-love.png);
+}
+
+button[name="Prima Comedy"] {
+    background-image: url(/logo/prima-comedy.png);
+}
+
 button[name="Nova"] {
     background-image: url(/logo/nova.png);
+}
+
+button[name="Nova2"] {
+    background-image: url(/logo/nova2.png);
 }
 
 button[name="Nova Action"] {
@@ -419,6 +459,10 @@ button[name="Praha TV"] {
 
 button[name="TV Natura"] {
     background-image: url(/logo/tv-natura.png);
+}
+
+button[name="Hobby"] {
+    background-image: url(/logo/hobby.png);
 }
 
 button[name="Info Vojna"] {
@@ -559,6 +603,10 @@ button[name="Sky News US"] {
 
 button[name="CBC news"] {
     background-image: url(/logo/cbc-news.png);
+}
+
+button[name="Al Jazeera"] {
+    background-image: url(/logo/al-jazeera.png);
 }
 
 /* youtube channels */
