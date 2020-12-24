@@ -274,7 +274,7 @@ button[name="AMC"] {
 }
 
 button[name="CS Film"] {
-    background-image: url(/logo/csfilm.png);
+    background-image: url(/logo/cs-film.png);
 }
 
 button[name="CS History"] {
@@ -301,12 +301,40 @@ button[name="FilmBox"] {
     background-image: url(/logo/filmbox.png);
 }
 
-button[name="FilmBox+"] {
-    background-image: url(/logo/filmbox-plus.png);
+button[name="FilmBox Stars"] {
+    background-image: url(/logo/filmbox-stars.png);
 }
 
 button[name="FilmBox Family"] {
     background-image: url(/logo/filmbox-family.png);
+}
+
+button[name="FilmBox Extra"] {
+    background-image: url(/logo/filmbox-extra.png);
+}
+
+button[name="FilmBox Premium"] {
+    background-image: url(/logo/filmbox-premium.png);
+}
+
+button[name="FilmBox ArtHouse"] {
+    background-image: url(/logo/filmbox-art.png);
+}
+
+button[name="DocuBox"] {
+    background-image: url(/logo/docubox.png);
+}
+
+button[name="FashionBox"] {
+    background-image: url(/logo/fashionbox.png);
+}
+
+button[name="Film EU"] {
+    background-image: url(/logo/film-eu.png);
+}
+
+button[name="Film+EU"] {
+    background-image: url(/logo/film+eu.png);
 }
 
 button[name="Kino svet"] {
@@ -315,6 +343,10 @@ button[name="Kino svet"] {
 
 button[name="TV Paprika"] {
     background-image: url(/logo/paprika.png);
+}
+
+button[name="Food Network"] {
+    background-image: url(/logo/food-network.png);
 }
 
 button[name="Fashion TV"] {
@@ -459,6 +491,10 @@ button[name="Praha TV"] {
 
 button[name="TV Natura"] {
     background-image: url(/logo/tv-natura.png);
+}
+
+button[name="TV Relax"] {
+    background-image: url(/logo/relax.png);
 }
 
 button[name="Hobby"] {
