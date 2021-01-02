@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+# Tis is just a sample file omitting sensitive information
+# about bypassing authorization for otherwise public iptv streams
+# but protected by login so rich media companies can harvest your private
+# data and then sell them for profit to the highest bidder ...
+#
+# This should somehow protect me from media company's layers
+# and other active idiots / SJW deplatforming me ...
+
+# get various auth tokens from web pages
+#
+VERSION="2019.05.01"
+
+# specify which tokems/urls to retrieve and export
+#
+KEYS=${1:- USTVGO TA3 STVx DAJTO DOMA MARKIZA HRONKA INFOVOJNA }
+
+# user-agent
+#
+UA="Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:66.0) Gecko/20100101 Firefox/66.0"
+
+function auth_url_key
+{
+    local url=$1
+    local key=$2
+
+    # file: 'http://live.ustvgo.net/CNN/myStream/playlist.m3u8?wmsAuthSign=c2VydmVyX3...zPTM2MC'
+    # my.embedurl = [{"src" : "//e16.stv.livebox.sk/ta3/1.smil/playlist.m3u8?auth=_any_|153...080"}
+    # "file" : "http://e81.stv.livebox.sk/stv-tv/_definst_/stv2-3.stream/playlist.m3u8?auth=b64:X2F...1ND"
+    #wget -qO - "$url" | grep -oE "$key=[^\\\"']+" | head -1 | cut -d= -f2
+    wget -U "$UA" -qO - "$url" | grep -oE "$key=[^\\\"']+" | head -1 | sed -e 's/'$key='//'
+}
+
+# get entire url as server might occasionally change
+#
+function http_key_anchor_bax_ref
+{
+    local url=$1        # url
+    local key=$2        # key: "value"
+    local anchor=$3     # anchior tag around key
+    local bax=$4        # grep before/after x lines
+    local ref=$5        # optional referer
+
+    # use url as referer if referer not provided
+    [ -z "$ref" ] && ref="$url"
+
+    # -- removed --
+}
+
+# get ever-changing url for youtube live video stream
+#
+function youtube_live
+{
+    local channel_id=$1
+    local url="https://www.youtube.com/embed/live_stream?channel=$channel_id"
+
+    # -- removed --
+}
+
+
+# export auth keys
+#
+for k in $KEYS
+{
+
+    case $k in
+
+    USTVGO)     export AUTH_USTVGO=$( auth_url_key "http://ustvgo.net/cnn-live-streaming-free/" "wmsAuthSign" )
+                ;;
+
+    TA3)        export AUTH_TA3=$( auth_url_key "http://embed.livebox.cz/ta3_v2/live-source.js" "auth" )
+                ;;
+
+    STVx)
+                # token is not enough as server is changing too
+                # b64:X2FueV98MTU1NTA2NTIyM3wwZTI1NmVlYzcxNWI4Y2U5OGNkNTllZmRhMDFlN2I5NmE1MmUzZWQz
+                # _any_|1555065223|0e256eec715b8ce98cd59efda01e7b96a52e3ed3
+                #export AUTH_STVx=$( auth_url_key "http://www.rtvs.sk/json/live5.json" "auth" )
+
+                # http://n1.stv.livebox.sk/stv-tv/_definst_/stv2-3/playlist.m3u8?auth=b64:X2FueV98MTU1NTUwMDM1MHxmMzQzODA1YjU5MTY4N2ViOWUzNDI5NmNlNjdjMjBjYTNlNTUxZGIw
+                export HTTP_STV2=$( http_key_anchor_bax_ref "http://www.rtvs.sk/json/live5.json" "file" "hls" "B1" )
+                # other STVx is just find-replace
+                export HTTP_STV1=${HTTP_STV2/stv2/stv1}
+                export HTTP_STV3=${HTTP_STV2/stv2/stv3}
+                export HTTP_STV4=${HTTP_STV2/stv2/stv4}
+                ;;
+
+    DAJTO)      export HTTP_DAJTO=$( http_key_anchor_bax_ref -- removed -- )
+                ;;
+
+    DOMA)       export HTTP_DOMA=$( http_key_anchor_bax_ref -- removed -- )
+                ;;
+
+    MARKIZA)    export HTTP_MARKIZA=$( http_key_anchor_bax_ref -- removed -- )
+                ;;
+
+    HRONKA)     export HTTP_HRONKA=$( youtube_live "UCL7YcoT8M6f0ce6FsjQeU1A" )
+                ;;
+
+    INFOVOJNA)  export HTTP_INFOVOJNA=$( youtube_live "UC81PBuvIimtXQ8pDH7CcQkg" )
+                ;;
+
+    esac
+
+}
