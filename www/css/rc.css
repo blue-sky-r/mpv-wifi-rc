@@ -659,6 +659,18 @@ button[name="Pjakin"] {
     background-image: url(/logo/pjakin.png);
 }
 
+button[name="Vasky"] {
+    background-image: url(/logo/vasky.png);
+}
+
+button[name="Cesty k Sobe"] {
+    background-image: url(/logo/cesty-k-sobe.png);
+}
+
+button[name="CS Film Klasika"] {
+    background-image: url(/logo/cs-film-klasika.png);
+}
+
 button[name="InfoWars.com"] {
     background-image: url(/logo/infowars-com.png);
 }
@@ -693,6 +705,10 @@ button[name="PolMedia"] {
 
 button[name="FilmyCesky"] {
     background-image: url(/logo/filmy-cesky.png);
+}
+
+button[name="CsBudovatelskeFilmy"] {
+    background-image: url(/logo/cs-budovatel.png);
 }
 
 /* player control */
