@@ -622,6 +622,47 @@ note: edit only www/all/index.html
                         }
 
                     }
+                    else if (name == "nas") {
+
+                        // NAS channel
+                        //
+                        var channel = $(this).attr("data-channel");
+
+                        console.log("NAS channel:"+channel);
+
+                        // pager init
+                        youtube.pager_init(channel);
+
+                        // osd info
+                        //
+                        osd_show_text(messages["yt-getting-playlist"]);
+
+                        // get playlist
+                        //
+                        $.get("/cgi-bin/tv.cgi",
+                            {
+                                "nas-list":  0, // placeholder
+                                "channel":  channel,
+                                "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
+                                "idxto":    youtube.list_page * youtube.list_size
+                            },
+                            function (data, status) {
+
+                                try {
+                                    var json = $.parseJSON(data);
+
+                                    youtube.buttons_from_json(json);
+
+                                    youtube.playlist_show();
+
+                                } catch(e) {
+                                    alert("get NAS channel:\n channel: "+channel+"\n error: "+e+"\n data: "+data);
+                                }
+                            },
+                            "text"
+                        );
+
+                    }
                     else if (name == "program-list") {
 
                         // button pressed = active channel
@@ -756,6 +797,13 @@ note: edit only www/all/index.html
         <button class="button textbutton single" name="program">teraz</button>
         <button class="button textbutton single" name="program" data-offset="+1">po >></button>
 
+    <h4><span>NAS archiv</span></h4>
+        <button class="button textbutton1em single" name="nas" data-channel="movies">Filmy</button>
+        <button class="button textbutton1em radio" name="nas" data-channel="series">Seriály</button>
+        <button class="button textbutton1em radio" name="nas" data-channel="learn">Náučné</button>
+        <button class="button textbutton1em radio" name="nas" data-channel="doc">Dokumenty</button>
+        <br>
+
     <h4><span>youtube kanály</span></h4>
         <button class="button single ytchannel" data-channel="channel/UC81PBuvIimtXQ8pDH7CcQkg/videos" name="Info Vojna"></button>
         <button class="button single ytchannel" data-channel="c/%C5%A0tefanHarabinsudca/videos" name="Harabin"></button>
@@ -763,14 +811,19 @@ note: edit only www/all/index.html
         <button class="button single ytchannel" data-channel="channel/UCaYEYc7sy0TKAmfIUEiahxA/videos" name="Dr. Bukovsky"></button>
         <br>
         <button class="button single ytchannel" data-channel="channel/UCEB0x0zrM5P9GC0Do7SGTGQ/videos" name="Pjakin"></button>
+        <button class="button single ytchannel" data-channel="c/RudolfVasky/videos" name="Vasky"></button>
         <button class="button single ytchannel" data-channel="c/HNtelev%C3%ADziaSK/videos" name="HN"></button>
         <button class="button single ytchannel" data-channel="c/SMERSoci%C3%A1lnaDemokracia/videos" name="Smer"></button>
-        <button class="button single ytchannel" data-channel="user/zemavek/videos" name="ZemVek"></button>
         <br>
         <button class="button single ytchannel" data-channel="channel/UCy8woDNA0o6AIDu4ETrJQVg/videos" name="Vesmir"></button>
         <button class="button single ytchannel" data-channel="channel/UCbmT0HqNDwOdJMTbRwZMmzA/videos" name="GoschaTV"></button>
+        <button class="button single ytchannel" data-channel="user/Cestyksobe/videos" name="Cesty k Sobe"></button>
+        <button class="button single ytchannel" data-channel="user/zemavek/videos" name="ZemVek"></button>
+        <br>
+        <button class="button single ytchannel" data-channel="c/%C4%8Cesk%C3%A1filmov%C3%A1klasika/videos/" name="CS Film Klasika"></button>
         <button class="button single ytchannel" data-channel="playlist?list=PL2UI2P0sy-4CAfMNxiYiAgm90SGliTTTx" name="PolMedia"></button>
         <button class="button single ytchannel" data-channel="channel/UCoemQ3xsaVdIYtnh2B7K3Eg/videos" name="FilmyCesky"></button>
+        <button class="button single ytchannel" data-channel="channel/UC8rH80iOzA5crR4RxgDQMuQ/videos" name="CsBudovatelskeFilmy"></button>
         <br>
         <span id="yt-playlist">
             <button class="button textbutton single" name="yt-list-back">< -</button>
@@ -797,6 +850,7 @@ note: edit only www/all/index.html
             <span class="textpage">-</span>
             <button class="button textbutton single" name="yt-list-forward">+ ></button>
         </span>
+
     <h4><span>youtube</span></h4>
             <span>video = </span>
             <input type="text" size="37" id="yt-watch" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'')">
@@ -1020,18 +1074,6 @@ note: edit only www/all/index.html
         <button class="button textbutton1em radio" name="Toronto CNT.West">Toronto CNT.West</button>
         <button class="button textbutton1em radio" name="Toronto CNT.East">Toronto CNT.East</button>
         <button class="button textbutton1em radio" name="Niagara Falls">Niagara Falls</button>
-
-    <h4><span>vlaky</span></h4>
-
-        <button class="button textbutton1em radio" name="Tokyo JP">Tokyo</button>
-        <button class="button textbutton1em radio" name="Tokyo Shinjuku JP">Tokyo Shinjuku</button>
-        <button class="button textbutton1em radio" name="Hokkaido JP">Hokkaido</button>
-        <button class="button textbutton1em radio" name="Bergen Line NO">Bergen Line Nórsko</button>
-        <br>
-        <button class="button textbutton1em radio" name="Flåm Line NO">Flåm Line Nórsko</button>
-        <button class="button textbutton1em radio" name="Autumn NO">Autumn Nórsko</button>
-        <button class="button textbutton1em radio" name="Winter NO">Winter Nórsko</button>
-        <button class="button textbutton1em radio" name="Bangkok MaeKlong TH">Bangkok MaeKlong</button>
 
     <h4><span>prehľad</span></h4>
 
