@@ -691,6 +691,26 @@ button[name="HN"] {
     background-image: url(/logo/hn-tv.png);
 }
 
+button[name="DannyKollar"] {
+    background-image: url(/logo/DannyKollar.png);
+}
+
+button[name="ZazracneDieta"] {
+    background-image: url(/logo/ZazracneDieta.png);
+}
+
+button[name="ProudNarodniHrdosti"] {
+    background-image: url(/logo/ProudNarodniHrdosti.png);
+}
+
+button[name="Kulturblog"] {
+    background-image: url(/logo/Kulturblog.png);
+}
+
+button[name="Pravda"] {
+    background-image: url(/logo/Pravda.png);
+}
+
 button[name="GoschaTV"] {
     background-image: url(/logo/goschatv.png);
 }
@@ -709,6 +729,18 @@ button[name="FilmyCesky"] {
 
 button[name="CsBudovatelskeFilmy"] {
     background-image: url(/logo/cs-budovatel.png);
+}
+
+button[name="zvtv"] {
+    background-image: url(/logo/zvtv.png);
+}
+
+button[name="SlobodnyVysielac"] {
+    background-image: url(/logo/slobodny-vysielac.png);
+}
+
+button[name="TV Slovan"] {
+    background-image: url(/logo/tv-slovan.png);
 }
 
 /* player control */
