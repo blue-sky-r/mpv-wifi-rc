@@ -711,6 +711,18 @@ button[name="Pravda"] {
     background-image: url(/logo/Pravda.png);
 }
 
+button[name="CZ_Dokumenty"] {
+    background-image: url(/logo/CZ_Oli.png);
+}
+
+button[name="NalezyVHistorii"] {
+    background-image: url(/logo/tvcsmax.png);
+}
+
+button[name="DobyvanieVesmiru"] {
+    background-image: url(/logo/vesmir2.png);
+}
+
 button[name="GoschaTV"] {
     background-image: url(/logo/goschatv.png);
 }
