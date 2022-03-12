@@ -131,6 +131,10 @@ button[name="dvb Joj+"] {
     background-image: url(/logo/joj_plus.png);
 }
 
+button[name="dvb Joj Sport"] {
+    background-image: url(/logo/joj-sport.png);
+}
+
 button[name="dvb TA3"] {
     background-image: url(/logo/TA3.png);
 }
@@ -177,6 +181,22 @@ button[name="dvb STV2 HD"] {
 
 button[name="dvb STV3 HD"] {
     background-image: url(/logo/STV3-HD.png);
+}
+
+button[name="dvb RTVS 24"] {
+    background-image: url(/logo/rtvs24.png);
+}
+
+button[name="dvb RTVS Sport"] {
+    background-image: url(/logo/rtvs-sport.png);
+}
+
+button[name="dvb Sport 1"] {
+    background-image: url(/logo/sport1.png);
+}
+
+button[name="dvb Sport 2"] {
+    background-image: url(/logo/sport2.png);
 }
 
 /* iptv */
