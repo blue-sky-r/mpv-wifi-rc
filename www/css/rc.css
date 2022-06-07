@@ -209,8 +209,12 @@ button[name="Doma"] {
     background-image: url(/logo/doma.png);
 }
 
-button[name="Markíza"] {
+button[name="Markiza"] {
     background-image: url(/logo/markiza.png);
+}
+
+button[name="Markiza krimi"] {
+    background-image: url(/logo/markiza-krimi.png);
 }
 
 button[name="STV1"] {
