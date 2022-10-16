@@ -1,4 +1,4 @@
-/* version 2019.11.16 */
+/* version 2022.10.13 */
 
 h1, h2, h3 {
     width: 100%;
@@ -135,6 +135,10 @@ button[name="dvb Joj Sport"] {
     background-image: url(/logo/joj-sport.png);
 }
 
+button[name="dvb Joj 24"] {
+    background-image: url(/logo/joj-24.png);
+}
+
 button[name="dvb TA3"] {
     background-image: url(/logo/TA3.png);
 }
@@ -247,6 +251,10 @@ button[name="Joj Family"] {
 
 button[name="Joj Cinema"] {
     background-image: url(/logo/joj_cinema.png);
+}
+
+button[name="Joj 24"] {
+    background-image: url(/logo/joj-24.png);
 }
 
 button[name="TA3"] {

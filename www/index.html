@@ -1,8 +1,13 @@
 <html>
 <!--
+version: 2022.10.13
+
+note: edit only www/all/index.html
+
 -->
 <head>
-	<title>EeeTV</title>
+	<title>iPTV</title>
+        <!-- favicon -->
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <!-- apple springboard icons -->
 		<link rel="apple-touch-icon" sizes="57x57" href="/ico/uni-57.png" />
@@ -11,21 +16,32 @@
 		<link rel="apple-touch-icon" sizes="144x144" href="/ico/uni-144.png" />
         <!-- css -->
         <link rel="stylesheet" type="text/css" href="/css/rc.css">
+        <!-- jquery -->
     	<script src="/js/jquery-3.3.1.min.js"></script>
         <!-- iPad 1,3 768 × 928 (1536 x 1856 pixels) In portrait on iOS 5 -->
         <meta name="viewport" content="width=768, initial-scale=1.42, minimum-scale=1.42, maximum-scale=1.42">
         <script>
-            // iPhone scalling
+            // iPhone scaling
             if (/iphone/i.test(navigator.userAgent.toLowerCase()))
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
-        <meta name="version" content="2019.05.02">
+        <!-- version -->
+        <meta name="version" content="2022.10.13">
+
     <script>
         $(document).ready(function(){
 
+            // error messages shown as alert on RC browser/client
+            //
             var messages = {
                 "socat-conection-refused":  "iPTV zariadenie je vypnuté !",
-                "other-error":              "iPTV zariadenie nefunguje !"
+                "other-error":              "iPTV zariadenie nefunguje !",
+                "wid-empty":                "Chýba youtube video id !",
+                "yt-getting-playlist":      "spracovanie zoznamu",
+                "play":                     ">",
+                "pause":                    "STOP",
+                "rew":                      "<< -1 min",
+                "ff":                       "+1 min >>"
             };
 
             // show alert if data starts with DBG
@@ -44,7 +60,7 @@
                 // progess bar size
                 barsize: 25,
 
-                // usd epg duration in ms
+                // osd epg duration in ms
                 timems: 20000,
 
                 // previous/next offset manipulation
@@ -71,6 +87,11 @@
                 // yyyymmddhhmm -> hh:mm
                 hhmm: function (dt) {
                     return dt.length == 12 ? dt.substr(-4,2) + ":" + dt.substr(-2,2) : ' ';
+                },
+
+                // remove dvb prefix, HD suffix, RU/EN suffix to get channel name
+                title2channel: function (title) {
+                    return title.replace(/^dvb /, '').replace(/ HD$/, '').replace(/ (RU|EN)$/, '');
                 },
 
                 // test pattern x . y with font size fs
@@ -102,7 +123,7 @@
                     var esc = "\\\\";
                     if (Array.isArray(tag)) {
                         var result = "";
-                        tag.forEach(function(item) { result += "{" + esc + item + "}" })
+                        tag.forEach(function(item) { result += "{" + esc + item + "}" });
                         return result;
                     }
                     return "{" + esc + tag + "}";
@@ -154,9 +175,114 @@
                 },
             };
 
+            var osd_show_text = function (text) {
+                if (text)
+                    $.get(  "/cgi-bin/tv.cgi",
+                            {
+                                "show-text": text
+                            },
+                            alert_dbg,
+                            "text"
+                    )
+            };
+
+            // youtube
+            //
+            var youtube = {
+
+                // playlist size (entries, should be = #buttons)
+                list_size: 15,
+
+                // playlist page
+                list_page: 1,
+
+                // title max length (for buttons) (55 for tde desktop, 60 for ipad3)
+                title_max: 60,
+
+                // pager info text
+                pager_txt_format: "[ stránka: %d ]",
+
+                // channel id
+                channel: null,
+
+                pager_init: function (channel) {
+                    // save channel-id
+                    this.channel = channel;
+                    // the first page
+                    this.list_page = 1;
+                },
+
+                pager_update: function () {
+                    // display page nr
+                    $(".textpage").text(this.pager_text());
+                    // disable back button at the first page
+                    $("button[name='yt-list-back']").prop("disabled", this.list_page == 1);
+                    // disable forward button if last playlist button is hidden
+                    $("button[name='yt-list-forward']").prop("disabled", $("#idx-"+this.list_size).hidden);
+                },
+
+                pager_text: function () {
+                    return this.pager_txt_format.replace('%d', this.list_page);
+                },
+
+                playlist_button_idx: function (idx, watchid, title) {
+
+                    var button = $("#idx-"+idx);
+
+                    if (watchid && title) {
+                        // video-id
+                        button.attr("data-wid", watchid);
+                        // title
+                        button.text(osd_epg.str_max(title, this.title_max));
+                        // hide
+                        button.show();
+                    } else {
+                        // hide
+                        button.hide();
+                        // video-id
+                        button.attr("data-wid", "");
+                        // title
+                        button.text("");
+                    }
+                },
+
+                buttons_from_json: function (json) {
+
+                        var idx = 1;
+
+                        // update buttons from playlist id / title
+                        for (item of json) {
+                            this.playlist_button_idx(idx, item.id, item.title);
+                            idx++;
+                        };
+
+                        // hide unfilled buttons
+                        for (; idx <= youtube.list_size; idx++) {
+                            this.playlist_button_idx(idx, "", "");
+                        };
+
+                        // update pager status and buttons
+                        this.pager_update();
+                },
+
+                playlist_hide: function () {
+                    $("#yt-playlist").hide();
+                },
+
+                playlist_show: function () {
+                    $("#yt-playlist").show();
+                }
+            };
+
+            youtube.playlist_hide();
+
             function simulate_press_eject(button, eject, delayup) {
 
                 console.log('simulate_press_eject(buton='+button.attr('name')+', eject='+eject+', delayup='+delayup);
+
+                // if button not found, do nothing
+                //
+                if (! button || ! button.length) return;
 
                 // eject currently pressed button
                 //
@@ -172,13 +298,18 @@
             }
 
             function press_button_with_active_channel() {
+
+                console.log('press_button_with_active_channel()');
+
                 $.get( "/cgi-bin/tv.cgi", "get-title",
                         function(data, status) {
                             try {
                                 // {"data":"Wau,,0","error":"success"}
                                 var title = $.parseJSON(data).data.replace(/,,0$/, '');
 
-                                simulate_press_eject($("button[name='"+ title +"']"), true, 0);
+                                console.log('get-title returns title='+title);
+
+                                if (title) simulate_press_eject($("button[name='"+ title +"']"), true, 0);
 
                             } catch(e) {
                                 if (data.indexOf('socat') > 1 && data.indexOf('Connection refused') > 1) {
@@ -211,28 +342,59 @@
                 //
                 var name = $(this).prop("name");
 
-                // channel-buttons have radio class
+                console.log('button.click() name='+name);
+
+                // channel-buttons, yt-play have radio class
                 //
                 if ($(this).hasClass("radio")) {
 
-                    simulate_press_eject($(this), true, 0);
+                    if (name == "yt-play") {
 
-                    // channel switching
-                    // ?channel=name
-                    $.get(  "/cgi-bin/tv.cgi",
-                            {
-                                "channel": name
-                            },
-                            alert_dbg,
-                            "text"
-                    )
+                        simulate_press_eject($(this), false, 2000);
+
+                        // youtube watch v=id or yt-playlist button (data-wid)
+                        var vid = $(this).attr("data-wid") || $("#yt-watch").val();
+
+                        // replace http[s]:// -> ytdl://
+                        vid = vid.replace(/https?:/, 'ytdl:');
+
+                        if (! vid) {
+                            alert(messages["wid-empty"]);
+                        } else {
+                            $.get("/cgi-bin/tv.cgi",
+                                    {
+                                        "yt-watch": vid
+                                    },
+                                    alert_dbg,
+                                    "text"
+                            );
+                        }
+                    }
+                    else {
+
+                        // hide youtube playlist when watching TV channels
+                        //
+                        youtube.playlist_hide();
+
+                        simulate_press_eject($(this), true, 0);
+
+                        // channel switching
+                        // ?channel=name
+                        $.get("/cgi-bin/tv.cgi",
+                                {
+                                    "channel": name
+                                },
+                                alert_dbg,
+                                "text"
+                        )
+                    }
 
                 }
                 // single functionality button (not channel switching)
                 //
                 else if ($(this).hasClass("single")) {
 
-                    simulate_press_eject($(this), false, 2000);
+                    simulate_press_eject($(this), false, 3000);
 
                     // survey has specific parameters
                     //
@@ -263,6 +425,105 @@
                             )
                         }
                     }
+
+                    // youtube channel - retrieve and show playlist
+                    //
+                    else if ($(this).hasClass("ytchannel")) {
+
+                        // youtube channel id
+                        //
+                        var channel = $(this).attr("data-channel");
+
+                        // pager init
+                        youtube.pager_init(channel);
+
+                        // osd info
+                        //
+                        osd_show_text(messages["yt-getting-playlist"]);
+
+                        // get playlist
+                        //
+                        $.get("/cgi-bin/tv.cgi",
+                                {
+                                    "yt-list":  0, // placeholder
+                                    "channel":  channel,
+                                    "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
+                                    "idxto":    youtube.list_page * youtube.list_size
+                                },
+                                function (data, status) {
+
+                                    try {
+                                        var json = $.parseJSON(data);
+
+                                        youtube.buttons_from_json(json);
+
+                                        youtube.playlist_show();
+
+                                    } catch(e) {
+                                        alert("get youtube playlist:\n channel: "+channel+"\n error: "+e+"\n data: "+data);
+                                    }
+                                },
+                                "text"
+                        );
+                    }
+
+                    // youtube channel playlist move FORWARD / BACK
+                    //
+                    else if (name == "yt-list-back" || name == "yt-list-forward") {
+
+                        // next page
+                        //
+                        if (name == "yt-list-forward") youtube.list_page++;
+
+                        // previous page
+                        //
+                        if (name == "yt-list-back" && youtube.list_page > 1) youtube.list_page--;
+
+                        // osd info
+                        //
+                        osd_show_text(messages["yt-getting-playlist"]);
+
+                        $.get("/cgi-bin/tv.cgi",
+                                {
+                                    "yt-list":  0, // placeholder
+                                    "channel":  youtube.channel,
+                                    "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
+                                    "idxto":    youtube.list_page * youtube.list_size
+                                },
+                                function (data, status) {
+
+                                    try {
+                                        var json = $.parseJSON(data);
+
+                                        youtube.buttons_from_json(json);
+
+                                    } catch(e) {
+                                        alert("get youtube playlist:\n channel: "+channel+"\n error: "+e+"\n data: "+data);
+                                    }
+                                },
+                                "text"
+                        )
+                    }
+
+                    // raw command for player (pause, play, seek, ...)
+                    //
+                    else if ($(this).hasClass("cmd")) {
+
+                        var cmd = $(this).attr("data-cmd");
+
+                        // display osd info
+                        osd_show_text(messages[name]);
+
+                        // exec cmd
+                        $.get(  "/cgi-bin/tv.cgi",
+                                {
+                                    "cmd": cmd
+                                },
+                                alert_dbg,
+                                "text"
+                        )
+                    }
+
                     // show-text has show-text parameter
                     //
                     else if (name == "show-text") {
@@ -270,14 +531,9 @@
                         // text parameter
                         // ?show-text=this+is+text
                         var text = $("#text").val();
-                        $.get(  "/cgi-bin/tv.cgi",
-                                {
-                                    "show-text": text
-                                },
-                                alert_dbg,
-                                "text"
-                        )
+                        osd_show_text(text);
                     }
+
                     // show active channel EPG
                     //
                     else if (name == "program") {
@@ -300,10 +556,13 @@
                                 );
                         } else {
 
+                            // remove dvb_ prefix, _HD suffix, _EN or _RU suffix
+                            var channel = osd_epg.title2channel(title);
+
                             $.get( "/cgi-bin/tv.cgi",
                                     {
                                         "get-epg": 0,
-                                        "channel": title,
+                                        "channel": channel,
                                         "offset":  osd_epg.offset,
                                         "barsize": osd_epg.barsize
                                     },
@@ -345,7 +604,7 @@
                     else if (name == "playlist") {
 
                         // playlist command
-                        var command = $(this).data("command")
+                        var command = $(this).data("command");
 
                         $.get( "/cgi-bin/tv.cgi",
                                 {
@@ -355,15 +614,62 @@
                                 "text"
                         );
 
-                        // as the channel has been changed update button pressed after short delay
+                        // as the channel has been changed by next/prev update button pressed
+                        // after short delay (except restart via ESC)
                         //
-                        setTimeout(function() { press_button_with_active_channel(); }, 1000);
+                        if (command != "esc" && command != "shutdown") {
+                            setTimeout(function () { press_button_with_active_channel(); }, 1000);
+                        }
+
+                    }
+                    else if (name == "nas") {
+
+                        // NAS channel
+                        //
+                        var channel = $(this).attr("data-channel");
+
+                        console.log("NAS channel:"+channel);
+
+                        // pager init
+                        youtube.pager_init(channel);
+
+                        // osd info
+                        //
+                        osd_show_text(messages["yt-getting-playlist"]);
+
+                        // get playlist
+                        //
+                        $.get("/cgi-bin/tv.cgi",
+                            {
+                                "nas-list":  0, // placeholder
+                                "channel":  channel,
+                                "idxfrom":  1 + (youtube.list_page - 1) * youtube.list_size,
+                                "idxto":    youtube.list_page * youtube.list_size
+                            },
+                            function (data, status) {
+
+                                try {
+                                    var json = $.parseJSON(data);
+
+                                    youtube.buttons_from_json(json);
+
+                                    youtube.playlist_show();
+
+                                } catch(e) {
+                                    alert("get NAS channel:\n channel: "+channel+"\n error: "+e+"\n data: "+data);
+                                }
+                            },
+                            "text"
+                        );
 
                     }
                     else if (name == "program-list") {
 
                         // button pressed = active channel
                         var title = $(".radio.buttondown").attr("name");
+
+                        // remove dvb_ prefix, _HD suffix, _EN or _RU suffix
+                        var channel = osd_epg.title2channel(title);
 
                         // limit (page size)
                         var size = $(this).data("size")
@@ -374,7 +680,7 @@
                         $.get( "/cgi-bin/tv.cgi",
                                 {
                                     "get-epg-list": size,
-                                    "channel":      title,
+                                    "channel":      channel,
                                     "offset":       osd_epg.offset
                                 },
                                 function (data, status) {
@@ -425,11 +731,42 @@
 </head>
 <body>
 
-<h3>EeeTV WiFi TV Diaľkový Ovládač</h3>
-    <h4><span>sloveské kanály</span></h4>
+<h3>iPTV WiFi TV Diaľkový Ovládač</h3>
+
+    <h4><span>dvbt (cez antenu)</span></h4>
+        <button class="button radio" name="dvb STV1"></button>
+        <button class="button radio" name="dvb STV2"></button>
+        <button class="button radio" name="dvb STV3"></button>
+        <button class="button radio" name="dvb RTVS 24"></button>
+        <br>
+        <button class="button radio" name="dvb Joj"></button>
+        <button class="button radio" name="dvb Joj+"></button>
+        <button class="button radio" name="dvb Joj Sport"></button>
+        <button class="button radio" name="dvb Wau"></button>
+        <br>
+        <button class="button radio" name="dvb Promo" disabled></button>
+        <!-- <button class="button radio" name="dvb SSTV" disabled></button> -->
+        <button class="button radio" name="dvb Joj 24"></button>
+        <button class="button radio" name="dvb Hronka"></button>
+        <button class="button radio" name="dvb TA3"></button>
+        <br>
+        <!-- <button class="button radio" name="dvb Osem" disabled></button> -->
+        <button class="button radio" name="dvb Lux"></button>
+        <button class="button radio" name="dvb Noe"></button>
+        <button class="button radio" name="dvb RTVS Sport"></button>
+        <button class="button radio" name="dvb Sport 1"></button>
+        <!-- <button class="button radio" name="dvb Senzi" disabled></button> -->
+        <br>
+        <button class="button radio" name="dvb STV1 HD"></button>
+        <button class="button radio" name="dvb STV2 HD"></button>
+        <button class="button radio" name="dvb STV3 HD"></button>
+        <button class="button radio" name="dvb Sport 2"></button>
+
+    <h4><span>slovenské kanály</span></h4>
         <button class="button radio" name="Dajto"></button>
         <button class="button radio" name="Doma"></button>
-        <button class="button radio" name="Markíza"></button>
+        <button class="button radio" name="Markiza"></button>
+        <button class="button radio" name="Markiza krimi"></button>
         <br>
         <button class="button radio" name="Joj"></button>
         <button class="button radio" name="Joj+"></button>
@@ -438,30 +775,123 @@
         <br>
         <button class="button radio" name="STV1"></button>
         <button class="button radio" name="STV2"></button>
-        <button class="button radio" name="TA3"></button>
-        <button class="button radio" name="TV Hronka"></button>
-        <br>
-        <button class="button radio" name="Wau"></button>
-        <button class="button radio" name="Lux"></button>
-        <button class="button radio" name="Osem"></button>
-        <button class="button radio" name="Dr. Bukovsky"></button>
+        <button class="button radio" name="STV3"></button>
+        <button class="button radio" name="NR.SR"></button>
         <br>
         <button class="button radio" name="TV Raj"></button>
-        <button class="button radio" name="STV3"></button>
-        <button class="button radio" name="Info Vojna"></button>
-        <button class="button radio" name="Radio Info Vojna"></button>
+        <!-- <button class="button radio" name="SSTV"></button> -->
+        <button class="button radio" name="Joj 24"></button>
+        <button class="button radio" name="TV Hronka"></button>
+        <button class="button radio" name="TA3"></button>
+        <br>
+        <button class="button radio" name="Lux"></button>
+        <button class="button radio" name="Wau"></button>
+        <button class="button radio" name="Osem"></button>
+        <button class="button radio" name="CE TV"></button>
 
-    <h4><span>kanál</span></h4>
+    <h4><span>akcia</span></h4>
         <p align="center">
+            <button class="button textbutton single" name="playlist" data-command="meteogram">48 hod</button>
+            <button class="button textbutton single" name="playlist" data-command="shutdown">vypni</button>
+        </p>
+        <button class="button textbutton single" name="playlist" data-command="esc">ESC</button>
         <button class="button textbutton single" name="playlist" data-command="playlist-prev">< -1</button>
         <button class="button textbutton single" name="playlist" data-command="reload">TV</button>
         <button class="button textbutton single" name="playlist" data-command="playlist-next">+1 ></button>
-        </p>
+
+    <h4><span>TV program</span></h4>
+        <button class="button textbutton single" name="program-list" data-size="14">prehlad</button>
+        <button class="button textbutton single" name="program" data-offset="-1"><< pred</button>
+        <button class="button textbutton single" name="program">teraz</button>
+        <button class="button textbutton single" name="program" data-offset="+1">po >></button>
+
+    <h4><span>NAS archiv</span></h4>
+        <button class="button textbutton1em single" name="nas" data-channel="movies">Filmy</button>
+        <button class="button textbutton1em radio" name="nas" data-channel="series">Seriály</button>
+        <button class="button textbutton1em radio" name="nas" data-channel="learn">Náučné</button>
+        <button class="button textbutton1em radio" name="nas" data-channel="doc">Dokumenty</button>
+        <br>
+
+    <h4><span>youtube kanály</span></h4>
+        <button class="button single ytchannel" data-channel="channel/UC81PBuvIimtXQ8pDH7CcQkg/videos" name="Info Vojna"></button>
+        <button class="button single ytchannel" data-channel="c/%C5%A0tefanHarabinsudca/videos" name="Harabin"></button>
+        <button class="button single ytchannel" data-channel="channel/UC33bZHH3JUbuVjJiMddBBcw/videos" name="Chmelar"></button>
+        <button class="button single ytchannel" data-channel="channel/UCkXaj-xQSIg7Fvz4CBN39Mg/videos" name="Dr. Bukovsky"></button>
+        <!-- <button class="button single ytchannel" data-channel="channel/UCaYEYc7sy0TKAmfIUEiahxA/videos" name="Dr. Bukovsky"></button> -->
+        <br>
+        <!-- <button class="button single ytchannel" data-channel="channel/UCEB0x0zrM5P9GC0Do7SGTGQ/videos" name="Pjakin"></button> -->
+        <button class="button single ytchannel" data-channel="channel/UCKj43efhJ3jazTlenp8EJ0g/videos" name="SlobodnyVysielac"></button>
+        <!-- <button class="button single ytchannel" data-channel="c/RudolfVasky/videos" name="Vasky"></button> -->
+        <!-- <button class="button single ytchannel" data-channel="user/TVKorene1/videos" name="TV Slovan"></button> -->
+        <button class="button single ytchannel" data-channel="channel/UCiKrVykAJLb83HU24MZBx8w/videos" name="TV Slovan"></button>
+        <button class="button single ytchannel" data-channel="c/HNtelev%C3%ADziaSK/videos" name="HN"></button>
+        <button class="button single ytchannel" data-channel="c/SMERSoci%C3%A1lnaDemokracia/videos" name="Smer"></button>
+        <br>
+        <button class="button single ytchannel" data-channel="channel/UCC9wimeGuOl318DvPhg2eTQ/videos" name="DannyKollar"></button>
+        <button class="button single ytchannel" data-channel="user/drbnuty/videos" name="ZazracneDieta"></button>
+        <button class="button single ytchannel" data-channel="channel/UCOlUMmNH_GQkE7gLoOKCkpg/videos" name="ProudNarodniHrdosti"></button>
+        <!-- <button class="button single ytchannel" data-channel="c/Kulturblog/videos" name="Kulturblog"></button> -->
+        <button class="button single ytchannel" data-channel="channel/UCXhpDbSwP-AO0RMPPny3i6g/videos" name="Kulturblog"></button>
+        <br>
+        <button class="button single ytchannel" data-channel="c/Pravda100/videos" name="Pravda"></button>
+        <button class="button single ytchannel" data-channel="playlist?list=PLcxxr4qP643PtSPkA6s_YDONlGHEXTzQv" name="CZ_Dokumenty"></button>
+        <button class="button single ytchannel" data-channel="playlist?list=PL4DEzO74YLBDmYb1voU9GY_WBejP_iAVK" name="NalezyVHistorii"></button>
+        <button class="button single ytchannel" data-channel="playlist?list=PL4DEzO74YLBBSNllHvr16mLg7IRRih7dk" name="DobyvanieVesmiru"></button>
+        <br>
+        <!--<button class="button single ytchannel" data-channel="channel/UCy8woDNA0o6AIDu4ETrJQVg/videos" name="Vesmir"></button>-->
+        <button class="button single ytchannel" data-channel="c/MajklzYouTube-13/videos" name="Vesmir"></button>
+        <button class="button single ytchannel" data-channel="channel/UCbmT0HqNDwOdJMTbRwZMmzA/videos" name="GoschaTV"></button>
+        <button class="button single ytchannel" data-channel="user/Cestyksobe/videos" name="Cesty k Sobe"></button>
+        <button class="button single ytchannel" data-channel="user/zemavek/videos" name="ZemVek"></button>
+        <br>
+        <button class="button single ytchannel" data-channel="c/%C4%8Cesk%C3%A1filmov%C3%A1klasika/videos/" name="CS Film Klasika"></button>
+        <button class="button single ytchannel" data-channel="playlist?list=PL2UI2P0sy-4CAfMNxiYiAgm90SGliTTTx" name="PolMedia"></button>
+        <button class="button single ytchannel" data-channel="channel/UCoemQ3xsaVdIYtnh2B7K3Eg/videos" name="FilmyCesky"></button>
+        <button class="button single ytchannel" data-channel="channel/UCivFldR8ZAMO5i4DEE53_Bw/videos" name="zvtv"></button>
+        <!-- <button class="button single ytchannel" data-channel="channel/UC8rH80iOzA5crR4RxgDQMuQ/videos" name="CsBudovatelskeFilmy"></button> -->
+        <br>
+        <span id="yt-playlist">
+            <button class="button textbutton single" name="yt-list-back">< -</button>
+            <span class="textpage">-</span>
+            <button class="button textbutton single" name="yt-list-forward">+ ></button>
+            <br>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-1" data-wid="">1</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-2" data-wid="">2</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-3" data-wid="">3</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-4" data-wid="">4</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-5" data-wid="">5</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-6" data-wid="">6</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-7" data-wid="">7</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-8" data-wid="">8</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-9" data-wid="">9</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-10" data-wid="">10</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-11" data-wid="">11</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-12" data-wid="">12</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-13" data-wid="">13</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-14" data-wid="">14</button>
+            <button class="button textbutton100 radio" name="yt-play" id="idx-15" data-wid="">15</button>
+
+            <button class="button textbutton single" name="yt-list-back">< -</button>
+            <span class="textpage">-</span>
+            <button class="button textbutton single" name="yt-list-forward">+ ></button>
+        </span>
+
+    <h4><span>youtube</span></h4>
+            <span>video = </span>
+            <input type="text" size="37" id="yt-watch" onchange="this.value=this.value.replace(/https?:\/\/www\.youtube\.com\/watch\?v=/,'')">
+            <button class="button textbutton1em radio" name="yt-play">prehraj</button>
+            <br>
+            <button class="button textbutton1em single cmd" name="rew"   data-cmd="seek -60"></button>
+            <button class="button textbutton1em single cmd" name="pause" data-cmd="set pause yes"></button>
+            <button class="button textbutton1em single cmd" name="play"  data-cmd="set pause no"></button>
+            <button class="button textbutton1em single cmd" name="ff"    data-cmd="seek +60"></button>
 
     <h4><span>české kanály</span></h4>
 
         <button class="button radio" name="ČT1"></button>
         <button class="button radio" name="ČT2"></button>
+        <button class="button radio" name="ČT3"></button>
+        <button class="button radio" name="ČT24"></button>
         <br>
         <button class="button radio" name="AMC"></button>
         <button class="button radio" name="FilmBox"></button>
@@ -483,14 +913,25 @@
         <button class="button radio" name="Nova Gold"></button>
         <button class="button radio" name="Nova Cinema"></button>
         <br>
+        <button class="button radio" name="Prima CNN"></button>
+        <button class="button radio" name="Prima Krimi"></button>
+        <button class="button radio" name="Prima Love"></button>
+        <button class="button radio" name="Prima Comedy"></button>
+        <br>
+        <button class="button radio" name="Nova2"></button>
         <button class="button radio" name="TV Barrandov"></button>
-        <button class="button radio" name="Barrandov+"></button>
+        <button class="button radio" name="Barrandov+" disabled></button>
         <button class="button radio" name="Kino Barrandov"></button>
         <br>
-        <button class="button radio" name="FilmBox+"></button>
+        <button class="button radio" name="CS History"></button>
+        <button class="button radio" name="CS Mystery"></button>
+        <button class="button radio" name="DTX" disabled></button>
+        <button class="button radio" name="History"></button>
+        <br>
+        <button class="button radio" name="FilmBox Stars"></button>
         <button class="button radio" name="FilmBox Family"></button>
-        <button class="button radio" name="E!"></button>
-        <button class="button radio" name="HBO 3"></button>
+        <button class="button radio" name="FilmBox Extra"></button>
+        <button class="button radio" name="FilmBox Premium"></button>
         <br>
         <button class="button radio" name="Cinemax"></button>
         <button class="button radio" name="Cinemax 2"></button>
@@ -500,34 +941,40 @@
         <button class="button radio" name="AXN"></button>
         <button class="button radio" name="AXN White"></button>
         <button class="button radio" name="AXN Black"></button>
+        <button class="button radio" name="HBO 3"></button>
         <br>
-        <button class="button radio" name="Kino svet"></button>
+        <button class="button radio" name="E!"></button>
+        <button class="button radio" name="TLC"></button>
+        <button class="button radio" name="Hobby"></button>
+        <button class="button radio" name="Kino svet" disabled></button>
+        <br>
+        <button class="button radio" name="Food Network" disabled></button>
         <button class="button radio" name="TV Paprika"></button>
         <button class="button radio" name="Fashion TV"></button>
         <button class="button radio" name="Elektrik TV"></button>
         <br>
-        <button class="button radio" name="Ceskoslovensko"></button>
+        <button class="button radio" name="Ceskoslovensko" disabled></button>
         <button class="button radio" name="Praha TV"></button>
         <button class="button radio" name="TV Natura"></button>
+        <button class="button radio" name="TV Relax"></button>
         <br>
         <button class="button radio" name="Očko Gold"></button>
         <button class="button radio" name="Retro"></button>
         <button class="button radio" name="VH 1"></button>
-        <button class="button radio" name="Monte Carlo"></button>
-
-    <h4><span>TV program</span></h4>
-
-        <button class="button textbutton single" name="program-list" data-size="14">prehlad</button>
-        <button class="button textbutton single" name="program" data-offset="-1"><< pred</button>
-        <button class="button textbutton single" name="program">teraz</button>
-        <button class="button textbutton single" name="program" data-offset="+1">po >></button>
+        <button class="button radio" name="Hit Music"></button>
+        <!-- button class="button radio" name="Monte Carlo"></button -->
 
     <h4><span>zahraničné kanály</span></h4>
 
+        <button class="button radio" name="FilmBox ArtHouse"></button>
+        <button class="button radio" name="DocuBox"></button>
+        <button class="button radio" name="FashionBox"></button>
+        <button class="button radio" name="Film EU"></button>
+        <br>
         <button class="button radio" name="NASA TV"></button>
         <button class="button radio" name="PBS"></button>
         <button class="button radio" name="SyFy"></button>
-        <button class="button radio" name="Hit Music"></button>
+        <button class="button radio" name="Film+EU"></button>
     <br>
         <button class="button radio" name="Pervyj 1"></button>
         <button class="button radio" name="Rossia 1"></button>
@@ -560,6 +1007,7 @@
         <button class="button radio" name="Toronto 360"></button>
     <br>
         <button class="button radio" name="InfoWars.com"></button>
+        <button class="button radio" name="Al Jazeera"></button>
 
     <h4><span>test</span></h4>
 
