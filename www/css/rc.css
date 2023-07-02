@@ -62,8 +62,10 @@ body {
     font-size: 1em;
     font-family: sans-serif;
     font-weight: bold;
-    height: 35px;
-    /*text-align: left;*/
+    height: auto;
+    padding: 10px;
+    text-align: left;
+    border-radius: 10px;
     vertical-align: middle;
     /* 100% is wider with shadow than other elements */
     width: 98%
@@ -721,6 +723,10 @@ button[name="Smer"] {
 
 button[name="HN"] {
     background-image: url(/logo/hn-tv.png);
+}
+
+button[name="HlavneSpravy"] {
+    background-image: url(/logo/hlavne-spravy.png);
 }
 
 button[name="DannyKollar"] {
