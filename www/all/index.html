@@ -1,6 +1,6 @@
 <html>
 <!--
-version: 2021.04.17
+version: 2023.07.02
 
 note: edit only www/all/index.html
 
@@ -26,7 +26,7 @@ note: edit only www/all/index.html
                 $("meta[name='viewport']").attr("content", "width=640, initial-scale=0.59, minimum-scale=0.59, maximum-scale=0.59");
         </script>
         <!-- version -->
-        <meta name="version" content="2020.11.20">
+        <meta name="version" content="2022.10.13">
 
     <script>
         $(document).ready(function(){
@@ -197,7 +197,7 @@ note: edit only www/all/index.html
                 list_page: 1,
 
                 // title max length (for buttons) (55 for tde desktop, 60 for ipad3)
-                title_max: 60,
+                title_max: 120,
 
                 // pager info text
                 pager_txt_format: "[ stránka: %d ]",
@@ -744,8 +744,9 @@ note: edit only www/all/index.html
         <button class="button radio" name="dvb Joj Sport"></button>
         <button class="button radio" name="dvb Wau"></button>
         <br>
-        <button class="button radio" name="dvb Promo" disabled></button>
-        <button class="button radio" name="dvb SSTV" disabled></button>
+        <button class="button radio" name="dvb Promo"></button>
+        <!-- <button class="button radio" name="dvb SSTV" disabled></button> -->
+        <button class="button radio" name="dvb Joj 24"></button>
         <button class="button radio" name="dvb Hronka"></button>
         <button class="button radio" name="dvb TA3"></button>
         <br>
@@ -755,12 +756,13 @@ note: edit only www/all/index.html
         <button class="button radio" name="dvb RTVS Sport"></button>
         <button class="button radio" name="dvb Sport 1"></button>
         <!-- <button class="button radio" name="dvb Senzi" disabled></button> -->
+        <!--
         <br>
         <button class="button radio" name="dvb STV1 HD"></button>
         <button class="button radio" name="dvb STV2 HD"></button>
-        <button class="button radio" name="dvb STV3 HD" disabled></button>
+        <button class="button radio" name="dvb STV3 HD"></button>
         <button class="button radio" name="dvb Sport 2"></button>
-
+        -->
     <h4><span>slovenské kanály</span></h4>
         <button class="button radio" name="Dajto"></button>
         <button class="button radio" name="Doma"></button>
@@ -774,11 +776,12 @@ note: edit only www/all/index.html
         <br>
         <button class="button radio" name="STV1"></button>
         <button class="button radio" name="STV2"></button>
-        <button class="button radio" name="STV3"></button>
+        <button class="button radio" name="STV3" disabled></button>
         <button class="button radio" name="NR.SR"></button>
         <br>
         <button class="button radio" name="TV Raj"></button>
-        <button class="button radio" name="SSTV"></button>
+        <!-- <button class="button radio" name="SSTV"></button> -->
+        <button class="button radio" name="Joj 24"></button>
         <button class="button radio" name="TV Hronka"></button>
         <button class="button radio" name="TA3"></button>
         <br>
@@ -810,41 +813,42 @@ note: edit only www/all/index.html
         <button class="button textbutton1em radio" name="nas" data-channel="doc">Dokumenty</button>
         <br>
 
-    <h4><span>youtube kanály</span></h4>
-        <button class="button single ytchannel" data-channel="channel/UC81PBuvIimtXQ8pDH7CcQkg/videos" name="Info Vojna"></button>
-        <button class="button single ytchannel" data-channel="c/%C5%A0tefanHarabinsudca/videos" name="Harabin"></button>
-        <button class="button single ytchannel" data-channel="channel/UC33bZHH3JUbuVjJiMddBBcw/videos" name="Chmelar"></button>
-        <button class="button single ytchannel" data-channel="channel/UCkXaj-xQSIg7Fvz4CBN39Mg/videos" name="Dr. Bukovsky"></button>
+    <h4><span>youtube-odysee kanály</span></h4>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@infovojna2023/videos" name="Info Vojna"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@StefanHarabinsudca/videos" name="Harabin"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@eduardchmelar5612/videos" name="Chmelar"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@dr.igorbukovskyzivotasvet4788/videos" name="Dr. Bukovsky"></button>
         <!-- <button class="button single ytchannel" data-channel="channel/UCaYEYc7sy0TKAmfIUEiahxA/videos" name="Dr. Bukovsky"></button> -->
         <br>
         <!-- <button class="button single ytchannel" data-channel="channel/UCEB0x0zrM5P9GC0Do7SGTGQ/videos" name="Pjakin"></button> -->
-        <button class="button single ytchannel" data-channel="channel/UCKj43efhJ3jazTlenp8EJ0g/videos" name="SlobodnyVysielac"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@slobodnyvysielaclive/videos" name="SlobodnyVysielac"></button>
         <!-- <button class="button single ytchannel" data-channel="c/RudolfVasky/videos" name="Vasky"></button> -->
-        <button class="button single ytchannel" data-channel="user/TVKorene1/videos" name="TV Slovan"></button>
-        <button class="button single ytchannel" data-channel="c/HNtelev%C3%ADziaSK/videos" name="HN"></button>
-        <button class="button single ytchannel" data-channel="c/SMERSoci%C3%A1lnaDemokracia/videos" name="Smer"></button>
+        <!-- <button class="button single ytchannel" data-channel="user/TVKorene1/videos" name="TV Slovan"></button> -->
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@televiziaslovan/videos" name="TV Slovan"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@HNteleviziaSK/videos" name="HN"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@SMERSocialnaDemokracia/videos" name="Smer"></button>
         <br>
-        <button class="button single ytchannel" data-channel="channel/UCC9wimeGuOl318DvPhg2eTQ/videos" name="DannyKollar"></button>
-        <button class="button single ytchannel" data-channel="user/drbnuty/videos" name="ZazracneDieta"></button>
-        <button class="button single ytchannel" data-channel="channel/UCOlUMmNH_GQkE7gLoOKCkpg/videos" name="ProudNarodniHrdosti"></button>
+        <button class="button single ytchannel" data-channel="https://odysee.com/@dannykollar:d?view=content" name="DannyKollar"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@hlavnespravysk4191/videos" name="HlavneSpravy"></button>
+        <button class="button single ytchannel" data-channel="https://odysee.com/@ProudN%C3%A1rodn%C3%ADHrdosti:4?view=content" name="ProudNarodniHrdosti"></button>
         <!-- <button class="button single ytchannel" data-channel="c/Kulturblog/videos" name="Kulturblog"></button> -->
         <button class="button single ytchannel" data-channel="channel/UCXhpDbSwP-AO0RMPPny3i6g/videos" name="Kulturblog"></button>
         <br>
-        <button class="button single ytchannel" data-channel="c/Pravda100/videos" name="Pravda"></button>
-        <button class="button single ytchannel" data-channel="playlist?list=PLcxxr4qP643PtSPkA6s_YDONlGHEXTzQv" name="CZ_Dokumenty"></button>
-        <button class="button single ytchannel" data-channel="playlist?list=PL4DEzO74YLBDmYb1voU9GY_WBejP_iAVK" name="NalezyVHistorii"></button>
-        <button class="button single ytchannel" data-channel="playlist?list=PL4DEzO74YLBBSNllHvr16mLg7IRRih7dk" name="DobyvanieVesmiru"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@Pravda100/videos" name="Pravda"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/playlist?list=PLcxxr4qP643PtSPkA6s_YDONlGHEXTzQv" name="CZ_Dokumenty"></button>
+        <button class="button single ytchannel" data-channel="" name="NalezyVHistorii"></button>
+        <button class="button single ytchannel" data-channel="" name="DobyvanieVesmiru"></button>
         <br>
         <!--<button class="button single ytchannel" data-channel="channel/UCy8woDNA0o6AIDu4ETrJQVg/videos" name="Vesmir"></button>-->
-        <button class="button single ytchannel" data-channel="c/MajklzYouTube-13/videos" name="Vesmir"></button>
-        <button class="button single ytchannel" data-channel="channel/UCbmT0HqNDwOdJMTbRwZMmzA/videos" name="GoschaTV"></button>
-        <button class="button single ytchannel" data-channel="user/Cestyksobe/videos" name="Cesty k Sobe"></button>
-        <button class="button single ytchannel" data-channel="user/zemavek/videos" name="ZemVek"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/c/MajklzYouTube-13/videos" name="Vesmir"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@GoschaTV1/videos" name="GoschaTV"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@Cestyksobe/videos" name="Cesty k Sobe"></button>
+        <button class="button single ytchannel" data-channel="" name="ZemVek"></button>
         <br>
-        <button class="button single ytchannel" data-channel="c/%C4%8Cesk%C3%A1filmov%C3%A1klasika/videos/" name="CS Film Klasika"></button>
-        <button class="button single ytchannel" data-channel="playlist?list=PL2UI2P0sy-4CAfMNxiYiAgm90SGliTTTx" name="PolMedia"></button>
-        <button class="button single ytchannel" data-channel="channel/UCoemQ3xsaVdIYtnh2B7K3Eg/videos" name="FilmyCesky"></button>
-        <button class="button single ytchannel" data-channel="channel/UCivFldR8ZAMO5i4DEE53_Bw/videos" name="zvtv"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/c/%C4%8Cesk%C3%A1filmov%C3%A1klasika/videos" name="CS Film Klasika"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@Polmedia/videos" name="PolMedia"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/@FILMYCESKY447/videos" name="FilmyCesky"></button>
+        <button class="button single ytchannel" data-channel="https://www.youtube.com/channel/UCivFldR8ZAMO5i4DEE53_Bw/videos" name="zvtv"></button>
         <!-- <button class="button single ytchannel" data-channel="channel/UC8rH80iOzA5crR4RxgDQMuQ/videos" name="CsBudovatelskeFilmy"></button> -->
         <br>
         <span id="yt-playlist">
