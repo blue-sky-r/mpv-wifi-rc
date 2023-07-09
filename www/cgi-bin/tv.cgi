@@ -2,7 +2,7 @@
 
 # version tag
 #
-VER="2020.11.17"
+VER="2023.07.01"
 
 # debug output to the caller (will show as pop-up alert)
 #
@@ -51,6 +51,66 @@ function json
 {
     local key=$1
     python -c "import sys, json; print json.load(sys.stdin).get($key)"
+}
+
+# list videos for channel $1 within idx range $2 .. $3
+# {"_type": "url", "url": "https://www.youtube.com/playlist?list=PLC35FDJiECFTJDMDfP6N2AQJkXG-N1iY5", "ie_key": null, "title": "Gear Reviews"}
+function youtube_dl_list
+{
+    local channel=$1
+    local idxlo=$2
+    local idxhi=$3
+
+    youtube-dl -j --restrict-filenames --socket-timeout 5 \
+        --playlist-start $idxlo --playlist-end $idxhi --flat-playlist \
+        http://www.youtube.com/${channel} \
+        | sed -e 's/\[Cel\\u00fd Film v \\u010ce\\u0161tin\\u011b\]//g' -e 's/\[\?\\u010cesk\\u00fd Dabing\]\?//g' \
+        | tr "\n" "," | sed -e 's/,$//'
+}
+
+# list videos for channel $1 within idx range $2 .. $3
+# {"_type": "url", "id": "Kth90VsCniQ", "url": "https://www.youtube.com/watch?v=Kth90VsCniQ",
+#  "title": "CANADA", "description": "Check out ..", "duration": 1762.0,
+#  "thumbnails": [{"url": "https://i.ytimg.com/vi/Kt", "height": 94, "width": 168},
+#                 {"url": "https://i.ytimg.com/vi/Kh", "height": 110, "width": 196}],
+#  "view_count": 105424, "duration_string": "29:22", "epoch": 1685781749, "filename": "CANADA_and_USA_ALERT_-_They_Are_About_to_Ban_EVERYTHING-[Kth90VsCniQ].NA"}
+#
+# > yt-dlp -J --restrict-filenames --playlist-start 1 --playlist-end 1 --no-flat-playlist 'https://www.youtube.com/@CanadianPrepper' | python -c "import sys,json; j=json.load(sys.stdin); print(json.dumps(j, sort_keys=True, indent=4))"
+# > yt-dlp --playlist-start 1 --playlist-end 3 -s --no-flat-playlist -O "%(url)s %(duration>%Mm%Ss)s %(upload_date>%Y-%m-%d)s" --flat-playlist 'https://www.youtube.com/@SMERSocialnaDemokracia/videos
+function yt_dlp_list
+{
+    #local channel=$1
+    #local url=http://www.youtube.com/${channel}
+    local url=$1
+    local idxlo=${2:-1}
+    local idxhi=${3:-10}
+    local formattxt='%(upload_date>%d.%m.%Y)s [%(duration>%M:%S)s] %(title).120s'
+    local txt
+    local kvarray=()
+    local json
+
+#    local pycode=$( cat <<___
+#        import sys,json
+#        try: j = json.load(sys.stdin)
+#        except json.decoder.JSONDecodeError: sys.exit(-1)
+#        for item in j:
+#            print(formatstr.format(**item))
+#___
+#    local json=$( yt-dlp -J --restrict-filenames --socket-timeout 5 \
+#        --playlist-start $idxlo --playlist-end $idxhi --flat-playlist \
+#        ${url} | python -c "$pycode" )
+#    # | tr '\n' ',' | sed -e 's/,$/\n/' )
+
+    # get video urls (there are no upload dates)
+    for videourl in $(yt-dlp --playlist-start $idxlo --playlist-end $idxhi -s --flat-playlist -O "%(url)s" --flat-playlist "${url}")
+    {
+        # get upload date for each video
+        txt=$( yt-dlp -q -i --no-warnings -s -O "${formattxt}" "$videourl" )
+        kvarray+=( "{ \"id\":\"$videourl\", \"title\":\"$txt\" }" )
+    }
+    # join key-val array ( videourl -> formatted-text )
+    json=$(IFS=, ; echo "${kvarray[*]}")
+    echo $json
 }
 
 # refresh playlist with fresh auth tokens/urls
@@ -289,11 +349,8 @@ case $CMD in
 
     # youtube list channel videos
     yt-list)
-                json=$( youtube-dl -j --restrict-filenames --socket-timeout 5 \
-                --playlist-start $idxfrom --playlist-end $idxto --flat-playlist \
-                http://www.youtube.com/${channel} \
-                | sed -e 's/\[Cel\\u00fd Film v \\u010ce\\u0161tin\\u011b\]//g' -e 's/\[\?\\u010cesk\\u00fd Dabing\]\?//g' \
-                | tr "\n" "," | sed -e 's/,$//' )
+                #json=$( youtube_dl_list ${channel} $idxfrom $idxto )
+                json=$( yt_dlp_list "${channel}" $idxfrom $idxto )
                 # output json
                 echo "[ $json ]"
                 ;;
