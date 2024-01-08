@@ -205,6 +205,10 @@ button[name="dvb Sport 2"] {
     background-image: url(/logo/sport2.png);
 }
 
+button[name="dvb Doktor TV"] {
+    background-image: url(/logo/tv-dr.png);
+}
+
 /* iptv */
 
 button[name="Dajto"] {
@@ -731,6 +735,11 @@ button[name="HlavneSpravy"] {
 
 button[name="DannyKollar"] {
     background-image: url(/logo/DannyKollar.png);
+}
+
+
+button[name="DannyKollarLive"] {
+    background-image: url(/logo/DannyKollarLive.png);
 }
 
 button[name="ZazracneDieta"] {
