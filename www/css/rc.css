@@ -209,6 +209,10 @@ button[name="dvb Doktor TV"] {
     background-image: url(/logo/tv-dr.png);
 }
 
+button[name="dvb MTV"] {
+    background-image: url(/logo/mtv.png);
+}
+
 /* iptv */
 
 button[name="Dajto"] {
